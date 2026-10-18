@@ -13,6 +13,8 @@ env:
 
 jobs:
   build:
+    # 公司版本首版只交付Windows，不自动发布上游Docker镜像。
+    if: github.repository == 'yetone/magpie'
     name: build (${{ matrix.platform }})
     strategy:
       fail-fast: false
@@ -99,7 +101,7 @@ jobs:
           retention-days: 1
 
   merge:
-    if: github.event_name != 'pull_request'
+    if: github.repository == 'yetone/magpie' && github.event_name != 'pull_request'
     needs: [build]
     runs-on: ubuntu-24.04
     permissions:

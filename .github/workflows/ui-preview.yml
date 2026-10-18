@@ -29,7 +29,8 @@ permissions: {}
 
 jobs:
   detect:
-    if: github.event.action != 'labeled' || github.event.label.name == 'ui-preview'
+    # 公司仓库不复用上游预览的外部服务与PR写入流程。
+    if: github.repository == 'yetone/magpie' && (github.event.action != 'labeled' || github.event.label.name == 'ui-preview')
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -69,7 +70,7 @@ jobs:
 
   record:
     needs: detect
-    if: needs.detect.outputs.ui == 'true'
+    if: github.repository == 'yetone/magpie' && needs.detect.outputs.ui == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     environment: ui-preview
@@ -126,7 +127,7 @@ jobs:
 
   publish:
     needs: [detect, record]
-    if: always() && needs.detect.outputs.ui == 'true'
+    if: always() && github.repository == 'yetone/magpie' && needs.detect.outputs.ui == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: write

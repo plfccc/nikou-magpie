@@ -9,6 +9,8 @@ import (
 
 const hasGUI = true
 
+func nikouAssetsCheck() error { return gui.NikouAssetsCheck() }
+
 // the desktop app may have been opened from the Finder, with none of the
 // PATH a terminal has
 func runGUI(showMain bool, link string) error {

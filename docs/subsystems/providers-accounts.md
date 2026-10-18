@@ -267,3 +267,7 @@ real `~/.codex`, `~/.claude`, `~/.config/gcloud` or `~/.config/magpie` files.
 Vertex AI's tests send Vertex AI, Google's token endpoint and IAM Credentials
 to a server of their own (`VertexForTest`). Check a change
 against real accounts in a sandbox HOME, as [Code standards](../code-standards.md#acceptance-criteria) describes.
+
+## 公司版 Nikou 账号桥接
+
+`nikou-bridge` JSON 子命令复用本包的账号发现、稳定 LoginID、原生切换和额度刷新。首版只提供 Codex/Claude；Kiro 等返回 `CAPABILITY_UNSUPPORTED`。`provider.Logins` 沿用本包发现逻辑，可能更新本机账号缓存，不能将桥接 list 描述为底层存储绝对只读。私有回执、去重与未知结果语义见 [Nikou 集成参考](nikou-integration.md)。

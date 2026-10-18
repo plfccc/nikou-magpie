@@ -53,7 +53,7 @@ func TestBuiltinSwitch(t *testing.T) {
 		if err := json.Unmarshal(rec.Body.Bytes(), &out); err != nil {
 			t.Fatal(err)
 		}
-		if len(out) != 14 {
+		if len(out) != len(pluginrt.Registered()) {
 			t.Fatalf("the built-ins: %+v", out)
 		}
 		for _, b := range out {
@@ -179,7 +179,14 @@ func TestBuiltinConfig(t *testing.T) {
 	}
 	rec := httptest.NewRecorder()
 	h.ServeHTTP(rec, httptest.NewRequest("GET", "/boot.js", nil))
-	if !strings.Contains(rec.Body.String(), `"pluginConfig":{"gateway":{"callsPage":50}}`) {
+	var prefs struct {
+		PluginConfig map[string]map[string]any `json:"pluginConfig"`
+	}
+	bootJSON := strings.TrimSuffix(strings.TrimPrefix(strings.TrimSpace(rec.Body.String()), "window.bootPrefs = "), ";")
+	if err := json.Unmarshal([]byte(bootJSON), &prefs); err != nil {
+		t.Fatalf("boot.js JSON: %v: %s", err, rec.Body)
+	}
+	if prefs.PluginConfig["gateway"]["callsPage"] != float64(50) {
 		t.Fatalf("boot.js: %s", rec.Body)
 	}
 }
@@ -255,6 +262,10 @@ func TestBuiltinsTranslated(t *testing.T) {
 		}
 		block, _, _ = strings.Cut(block, "\n  },")
 		for _, m := range pluginrt.Registered() {
+			// Nikou 按产品约定仅提供简体中文，直接使用中文键作为回退文案。
+			if m.ID == "nikou" {
+				continue
+			}
 			says := []string{m.Name, m.Sub, m.One, m.Many}
 			if sc := m.Schema(); sc != nil {
 				for _, p := range sc.Properties {

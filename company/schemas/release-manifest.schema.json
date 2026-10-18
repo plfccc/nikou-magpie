@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "公司双组件发布清单",
+  "type": "object",
+  "required": ["schemaVersion", "companyVersion", "bridgeProtocol", "magpieUpstreamCommit", "magpieCompanyCommit", "nikouUpstreamCommit", "nikouEffectiveCommit", "lockSha256", "platform", "arch", "runtime", "requirements", "assets", "packageSha256"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "companyVersion": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" },
+    "bridgeProtocol": { "const": 1 },
+    "magpieUpstreamCommit": { "$ref": "#/$defs/commit" },
+    "magpieCompanyCommit": { "$ref": "#/$defs/commit" },
+    "nikouUpstreamCommit": { "$ref": "#/$defs/commit" },
+    "nikouEffectiveCommit": { "$ref": "#/$defs/commit" },
+    "lockSha256": { "$ref": "#/$defs/digest" },
+    "packageSha256": { "$ref": "#/$defs/digest" },
+    "platform": { "const": "windows" },
+    "arch": { "const": "amd64" },
+    "runtime": {
+      "type": "object", "required": ["directory", "entry", "node"],
+      "properties": { "directory": { "$ref": "#/$defs/path" }, "entry": { "$ref": "#/$defs/path" }, "node": { "$ref": "#/$defs/path" } }
+    },
+    "requirements": {
+      "type": "object", "required": ["nodeVersion", "nodeAbi", "operatingSystem", "arch"],
+      "properties": { "nodeVersion": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" }, "nodeAbi": { "type": "string", "pattern": "^[0-9]+$" }, "operatingSystem": { "const": "windows" }, "arch": { "const": "amd64" } }
+    },
+    "assets": { "type": "array", "minItems": 1, "items": { "type": "object", "required": ["path", "role", "size", "sha256"], "properties": { "path": { "$ref": "#/$defs/path" }, "role": { "enum": ["magpie", "nikou-package", "node-runtime", "nikou-runtime", "license-magpie", "license-nikou"] }, "size": { "type": "integer", "minimum": 0 }, "sha256": { "$ref": "#/$defs/digest" } } } }
+  },
+  "$defs": { "commit": { "type": "string", "pattern": "^[0-9a-f]{40}$" }, "digest": { "type": "string", "pattern": "^[0-9a-f]{64}$" }, "path": { "type": "string", "minLength": 1, "pattern": "^(?!/)(?!.*\\\\)(?!.*(?:^|/)\\.\\.(?:/|$))[A-Za-z0-9_./@+ -]+$" } }
+}

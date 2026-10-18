@@ -1,0 +1,7 @@
+{
+  "hello": {"protocol":1,"requestId":"fixture-hello","ok":true,"data":{"service":"nikou-console","protocol":1,"packageVersion":"0.1.89","instanceId":"fixture-instance","capabilities":{"workerControl":true,"scopedRuntime":true,"operationStatus":true,"accounts":true}}},
+  "accounts": {"protocol":1,"requestId":"fixture-accounts","ok":true,"data":{"currentAlias":"测试账号","profiles":[{"id":"eyJlbmdpbmUiOiJjb2RleCIsInByb3ZpZGVySWQiOiJwcm92aWRlci0xIiwiYWNjb3VudElkIjoiYWNjb3VudC0xIn0","alias":"测试账号","current":true,"account":"测试身份","planLabel":"测试计划","usageLabel":"有效额度快照","ruleLabel":"","updatedAt":"2026-01-01T00:00:00Z","fetchOk":true,"ref":{"engine":"codex","providerId":"provider-1","accountId":"account-1"}}]}},
+  "select": {"protocol":1,"requestId":"fixture-select","ok":true,"data":{"ok":true,"engine":"codex","alias":"测试账号","providerId":"provider-1","requiresRestart":true}},
+  "refresh": {"protocol":1,"requestId":"fixture-refresh","ok":true,"data":{"ref":{"engine":"codex","providerId":"provider-1","accountId":"account-1"},"updatedAt":"2026-01-01T00:00:00Z"}},
+  "failure": {"protocol":1,"requestId":"fixture-failure","ok":false,"error":{"code":"CAPABILITY_UNSUPPORTED","message":"当前引擎不支持原生账号切换","retryable":false}}
+}

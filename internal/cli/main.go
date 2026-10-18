@@ -156,6 +156,10 @@ var (
 // Main runs magpie with os.Args, at the version the build was stamped with.
 func Main(v string) {
 	version = v
+	if len(os.Args) == 3 && os.Args[1] == "nikou-self-check" && os.Args[2] == "--json" {
+		if err := nikouSelfCheck(os.Stdout); err != nil { fmt.Fprintln(os.Stderr,err); os.Exit(1) }
+		return
+	}
 	// before anything reads or writes a file: no home, or a relative one,
 	// would put the agents' configs and magpie's keys under the working
 	// folder. What needs no file still answers (magpie version in a
@@ -214,6 +218,11 @@ func runTUI() error {
 var tuiRun = tui.Run
 
 func run(args []string) error {
+	// 公司桥接先于配置迁移执行，标准输出只承载协议。
+	if len(args) > 0 && args[0] == "nikou-bridge" {
+		if len(args) == 2 && args[1] == "--help" { fmt.Println("用法：magpie nikou-bridge，通过标准输入接收一个 JSON 账号请求");return nil }
+		return nikouBridgeCmd(args[1:])
+	}
 	// before anything is read, moved or started: --help on any command
 	// prints its usage and does nothing else
 	if helpAsked(args) {

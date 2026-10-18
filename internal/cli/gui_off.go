@@ -6,6 +6,8 @@ import "errors"
 
 const hasGUI = false
 
+func nikouAssetsCheck() error { return nil }
+
 func runGUI(bool, string) error { return errors.New("this build has no GUI; run `magpie tui`") }
 
 func runPanel() error { return runGUI(false, "") }

@@ -1,0 +1,24 @@
+#view-nikou { max-width: 1100px; margin-inline: auto; }
+.nikou-head, .nikou-tools, .nikou-fields { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.nikou-head { justify-content: space-between; margin-bottom: 18px; }
+.nikou-head h2 { margin: 0 0 5px; font-size: 20px; }
+.nikou-head p, .nikou-note { color: var(--muted); font-size: 12px; margin: 4px 0; line-height: 1.7; }
+.nikou-card { padding: 18px; margin-bottom: 18px; }
+.nikou-card h3 { font-size: 14px; margin: 0 0 14px; }
+.nikou-state { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; margin: 0 0 18px; }
+.nikou-state dt, .nikou-fields label > span { color: var(--muted); font-size: 12px; }
+.nikou-state dd { margin: 5px 0 0; overflow-wrap: anywhere; }
+.nikou-fields { align-items: flex-end; margin: 14px 0; }
+.nikou-fields label { display: flex; min-width: 0; flex: 1 1 180px; flex-direction: column; gap: 7px; }
+.nikou-fields .pick { max-width: 100%; justify-content: space-between; }
+.nikou-fields .pick > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.nikou-error { color: var(--red); font-size: 12px; white-space: pre-wrap; overflow-wrap: anywhere; margin: 12px 0; }
+.nikou-account { padding: 12px 0; gap: 12px; flex-wrap: wrap; }
+.nikou-account .who { min-width: 0; flex: 1 1 180px; overflow-wrap: anywhere; }
+.nikou-account .nikou-tools { gap: 8px; }
+#view-nikou button:disabled { opacity: .5; cursor: default; }
+@media (max-width: 600px) {
+  .nikou-state { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .nikou-card { padding: 14px; }
+  .nikou-fields label { flex-basis: 100%; }
+}

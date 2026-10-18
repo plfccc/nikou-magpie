@@ -4,6 +4,7 @@ These pages describe current responsibilities, runtime paths, state, and contrac
 
 | Subsystem | Reference |
 | --- | --- |
+| Nikou 公司内置插件、双端账号桥接与组合维护 | [Nikou 集成](nikou-integration.md) |
 | Built-in subscriptions moving to plugins | [Provider and plugin ownership](provider-plugins.md) |
 | Built-in plugins: registry, lifecycle, plugins.yml, presets, settings schemas, the window's kernel (slots, error boundary, kit) | [Plugin runtime](plugin-runtime.md) |
 | Plugins that run on the gateway's requests and replies | [Gateway middleware](gateway-middleware.md) |

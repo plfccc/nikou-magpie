@@ -41,6 +41,7 @@ const Site = "https://usemagpie.ai"
 // Feed is where the newest release is described. MAGPIE_UPDATE_FEED points
 // it elsewhere, for testing an update against a local server.
 func Feed() string {
+	if CompanyMode == "1" { return "" }
 	if f := os.Getenv("MAGPIE_UPDATE_FEED"); f != "" {
 		return f
 	}
@@ -80,6 +81,7 @@ func Latest(ctx context.Context) (*Release, error) { return LatestIn(ctx, "") }
 // LatestIn asks the feed for the newest release, its notes in lang (see
 // InLang): the app's language, which What's new follows.
 func LatestIn(ctx context.Context, lang string) (*Release, error) {
+	if CompanyMode == "1" { return nil, errors.New("公司版本请使用组合安装器更新 magpie 与 Nikou") }
 	req, err := http.NewRequestWithContext(ctx, "GET", withLang(Feed(), lang), nil)
 	if err != nil {
 		return nil, err

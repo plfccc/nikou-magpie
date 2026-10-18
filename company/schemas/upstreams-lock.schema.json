@@ -1,0 +1,51 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://company.invalid/nikou/upstreams-lock.schema.json",
+  "title": "双上游精确来源锁",
+  "type": "object",
+  "required": ["schemaVersion", "bridgeProtocol", "magpie", "nikou"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "bridgeProtocol": { "const": 1 },
+    "magpie": {
+      "type": "object",
+      "required": ["repository", "commit"],
+      "properties": { "repository": { "type": "string", "minLength": 1 }, "commit": { "$ref": "#/$defs/commit" } }
+    },
+    "nikou": {
+      "type": "object",
+      "required": ["mode", "package", "version", "sourceVerified"],
+      "properties": {
+        "package": { "const": "nikou-cli" },
+        "version": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(-[A-Za-z0-9_.-]+)?$" },
+        "registryGitHead": { "$ref": "#/$defs/commit" }
+      },
+      "oneOf": [
+        {
+          "required": ["integrity"],
+          "properties": {
+            "mode": { "const": "artifact" },
+            "sourceVerified": { "const": false },
+            "integrity": { "type": "string", "pattern": "^sha512-[A-Za-z0-9+/]+={0,2}$" }
+          }
+        },
+        {
+          "required": ["repository", "commit", "effectiveCommit", "dependencyLock"],
+          "properties": {
+            "mode": { "const": "source" },
+            "sourceVerified": { "const": true },
+            "repository": { "type": "string", "minLength": 1 },
+            "commit": { "$ref": "#/$defs/commit" },
+            "effectiveCommit": { "$ref": "#/$defs/commit" },
+            "dependencyLock": {
+              "type": "object",
+              "required": ["path", "sha256"],
+              "properties": { "path": { "const": "package-lock.json" }, "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" } }
+            }
+          }
+        }
+      ]
+    }
+  },
+  "$defs": { "commit": { "type": "string", "pattern": "^[a-f0-9]{40}$" } }
+}

@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Nikou 桥接 v1 响应信封",
+  "type": "object",
+  "required": ["protocol", "requestId", "ok"],
+  "properties": {
+    "protocol": { "const": 1 },
+    "requestId": { "type": "string", "pattern": "^[A-Za-z0-9._-]{1,100}$" },
+    "ok": { "type": "boolean" },
+    "data": { "type": "object" },
+    "error": {
+      "type": "object",
+      "required": ["code", "message", "retryable"],
+      "properties": { "code": { "type": "string", "minLength": 1 }, "message": { "type": "string" }, "retryable": { "type": "boolean" } },
+      "additionalProperties": false
+    }
+  },
+  "oneOf": [
+    { "properties": { "ok": { "const": true } }, "required": ["data"], "not": { "required": ["error"] } },
+    { "properties": { "ok": { "const": false } }, "required": ["error"], "not": { "required": ["data"] } }
+  ],
+  "additionalProperties": false
+}

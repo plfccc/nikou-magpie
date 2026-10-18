@@ -484,3 +484,7 @@ still follows the existing Not set up folding rules. The dialog explains that
 restoring visibility does not pin an unconfigured agent into the main list.
 See `agent-bulk-visibility.test.cjs` for persistence, partial selection, failed
 saves, narrow layouts and all five languages in Chromium and WebKit.
+
+## 公司版 Nikou 管理入口
+
+公司版在内置插件注册表中新增 `nikou`，通过 [Nikou 集成参考](nikou-integration.md) 维护跨仓库职责。页面资源与导航显式注册，桌面 API `/api/nikou/*` 代理本机控制台；浏览器版拒绝该入口。插件停用、页面隐藏或标签页隐藏时暂停轮询。页面只按真实 status 显示运行状态；写操作回执不等于 Worker 已启动。

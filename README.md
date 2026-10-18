@@ -4,6 +4,8 @@
 
 # magpie
 
+公司 Nikou 集成版请先阅读 [公司维护入口](company/README.md)。本分支保留上游网关，并加入 Windows Nikou 管理、双上游同步和离线组合回滚；正式发布状态以验证记录为准。
+
 ### Every agent's model. One place.
 
 **Claude Code on Kimi. Codex on DeepSeek. Gemini CLI on GLM. OpenCode on your ChatGPT plan.**<br>

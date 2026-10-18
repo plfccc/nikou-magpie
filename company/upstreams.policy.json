@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "reportMaxAgeHours": 24,
+  "tools": {
+    "go": "1.26.8",
+    "node": "24.11.1",
+    "nodeAbi": "137",
+    "bun": "1.4.2"
+  },
+  "magpie": {
+    "repository": "https://github.com/yetone/magpie.git",
+    "allowedRepositories": ["https://github.com/yetone/magpie.git"],
+    "channels": { "stable": "refs/heads/main" }
+  },
+  "nikou": {
+    "repository": "http://gitlab.inzwc.com/nikou/nikou-cli.git",
+    "allowedRepositories": ["http://gitlab.inzwc.com/nikou/nikou-cli.git"],
+    "workspace": "../nikou-cli-integration",
+    "channels": { "stable": "refs/heads/main" }
+  }
+}
