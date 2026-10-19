@@ -2,6 +2,7 @@ package gui
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -74,11 +75,19 @@ func TestCompanyUpstreamsLiveGitHub(t *testing.T) {
 func (f upstreamTransport) RoundTrip(r *http.Request) (*http.Response, error) { return f(r) }
 
 func TestCompanyUpstreamsReportsDifferenceAndUnknown(t *testing.T) {
+	var locked struct {
+		Magpie struct {
+			Commit string `json:"commit"`
+		} `json:"magpie"`
+	}
+	if err := json.Unmarshal(company.UpstreamsLock, &locked); err != nil {
+		t.Fatal(err)
+	}
 	for _, tc := range []struct {
 		name, body, want string
 		code             int
 	}{
-		{"same", `{"sha":"d783df46cbac9021e26a6bd71ca0b55544552eb2"}`, "current", 200},
+		{"same", fmt.Sprintf(`{"sha":%q}`, locked.Magpie.Commit), "current", 200},
 		{"changed", `{"id":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}`, "changed", 200},
 		{"private", `{"message":"secret response must not be exposed"}`, "unknown", 401},
 		{"malformed", `<html>login</html>`, "unknown", 200},

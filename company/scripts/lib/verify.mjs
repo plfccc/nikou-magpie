@@ -26,7 +26,7 @@ async function sourceVerify(options, checks) {
       ['Go本机vet', { file: 'go', args: ['vet', './...'], cwd: ctx.root }],
       ['Go Linux nogui vet', { file: 'go', args: ['vet', '-tags', 'nogui', './...'], cwd: ctx.root, env: { GOOS: 'linux', CGO_ENABLED: '0' } }],
       ['Go Windows vet', { file: 'go', args: ['vet', './...'], cwd: ctx.root, env: { GOOS: 'windows', CGO_ENABLED: '0' } }],
-      ['Go GUI内置插件及bootPrefs守卫', { file: 'go', args: ['test', './internal/gui', '-run', 'TestBuiltin|TestBootSaysBuiltinsOff|TestPluginsImportOnlyCore', '-count=1', '-timeout=120s'], cwd: ctx.root }],
+      ['Go GUI内置插件及bootPrefs守卫', { file: 'go', args: ['test', './internal/gui', '-run', 'TestBuiltin|TestBootSaysBuiltinsOff|TestPluginsImportOnlyCore|TestCompanyUpstreams|TestCompanyVersion', '-count=1', '-timeout=120s'], cwd: ctx.root }],
       ['Go插件运行时守卫', { file: 'go', args: ['test', './internal/pluginrt', '-count=1', '-timeout=120s'], cwd: ctx.root }],
       ['公司更新隔离守卫', { file: 'go', args: ['test', './internal/update', '-run', 'TestCompany', '-count=1', '-timeout=120s'], cwd: ctx.root }],
       ['Chromium集成页面与内置守卫', { file: process.execPath, args: ['--test', 'internal/gui/tests/nikou.test.cjs', 'internal/gui/tests/builtins.test.cjs', 'internal/gui/tests/plugin-kernel.test.cjs'], cwd: ctx.root, env: { BROWSER: 'chromium' } }],
