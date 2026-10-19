@@ -74,6 +74,41 @@ async function fixture(browser, lang = "zh", width = 420, options = {}) {
 }
 
 for (const engine of process.env.BROWSER ? [process.env.BROWSER] : ["chromium", "webkit"]) {
+  test(`${engine}: Nikou 菜单关闭、重绘清理和定位`, async t => {
+    const browser = await (engine === "webkit" ? webkit.launch() : chromium.launch({ channel: "chromium" }));
+    t.after(() => browser.close());
+    for (const width of [420, 1100]) {
+      const f = await fixture(browser, "zh", width, { clock: true });
+      try {
+        const pick = f.view.locator('[data-pick="engine"]');
+        const menu = f.page.getByRole("menu");
+        await f.view.locator('[data-action="check"]:enabled').waitFor();
+        await userClick(f.page, pick);
+        await menu.waitFor();
+        const anchor = await pick.boundingBox(), box = await menu.boundingBox();
+        assert.ok(Math.abs(anchor.x - box.x) < 2, "菜单左侧与触发器对齐");
+        assert.ok(box.x >= 0 && box.x + box.width <= width, "菜单不超出窗口");
+        await f.view.locator('[data-engine-label]').click();
+        await menu.waitFor({ state: "detached" });
+        await pick.click();
+        await pick.click();
+        await menu.waitFor({ state: "detached" });
+        await pick.click();
+        await f.page.keyboard.press("Escape");
+        await menu.waitFor({ state: "detached" });
+        assert.equal(await pick.getAttribute("aria-expanded"), "false");
+        await pick.click();
+        await f.page.clock.runFor(5100);
+        await f.view.locator('[data-action="check"]:enabled').waitFor();
+        await menu.waitFor({ state: "detached" });
+        await pick.click();
+        await f.page.evaluate(() => show("agents"));
+        await menu.waitFor({ state: "detached" });
+        assert.deepEqual(f.errors, []);
+      } finally { await f.context.close(); }
+    }
+  });
+
   test(`${engine}: Nikou 显示真实状态并确认写操作`, async (t) => {
     const browser = await (engine === "webkit" ? webkit.launch() : chromium.launch({ channel: "chromium" }));
     t.after(() => browser.close());

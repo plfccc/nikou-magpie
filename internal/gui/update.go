@@ -78,12 +78,13 @@ type updater struct {
 }
 
 type updateJSON struct {
-	State   string `json:"state"`
-	Current string `json:"current"`
-	Latest  string `json:"latest,omitempty"`
-	Notes   string `json:"notes,omitempty"`
-	URL     string `json:"url,omitempty"`
-	Stuck   string `json:"stuck,omitempty"` // available: why it can't update itself
+	Upstreams *upstreamStatus `json:"upstreams,omitempty"`
+	State     string          `json:"state"`
+	Current   string          `json:"current"`
+	Latest    string          `json:"latest,omitempty"`
+	Notes     string          `json:"notes,omitempty"`
+	URL       string          `json:"url,omitempty"`
+	Stuck     string          `json:"stuck,omitempty"` // available: why it can't update itself
 	// available, stuck "not-writable": the folder magpie may not write to
 	StuckDir string `json:"stuckDir,omitempty"`
 	Retry    bool   `json:"retry,omitempty"` // error: a click downloads it again
@@ -117,6 +118,20 @@ func updateDue(s settings.Settings, last, now time.Time) bool {
 }
 
 func (u *updater) start() {
+	if update.CompanyMode == "1" {
+		go func() {
+			time.Sleep(5 * time.Second)
+			for {
+				s := settings.Load()
+				last, _ := time.Parse(time.RFC3339, companyUpstreams.snapshot().CheckedAt)
+				if updateDue(s, last, time.Now()) {
+					companyUpstreams.check()
+				}
+				time.Sleep(time.Minute)
+			}
+		}()
+		return
+	}
 	u.place(runtime.GOOS, update.GUI)
 	go func() {
 		time.Sleep(5 * time.Second) // let the app settle first
@@ -199,6 +214,10 @@ var (
 
 // check asks the feed and, when it can, stages the new version.
 func (u *updater) check() {
+	if update.CompanyMode == "1" {
+		companyUpstreams.check()
+		return
+	}
 	if u.begin() {
 		u.run()
 	}
@@ -448,6 +467,10 @@ func (u *updater) json() updateJSON { return u.jsonIn("") }
 // Notes held in another language are asked for again in lang, at most
 // once a minute; the page's next look has them.
 func (u *updater) jsonIn(lang string) updateJSON {
+	if update.CompanyMode == "1" {
+		s := companyUpstreams.snapshot()
+		return updateJSON{State: "company", Current: Version, Upstreams: &s}
+	}
 	busy := gatewayBusy()
 	u.mu.Lock()
 	defer u.mu.Unlock()
@@ -568,6 +591,10 @@ func updateRoutes(mux *http.ServeMux, w Windows) {
 	// that can't replace itself is sent to the release page.
 	// The window's page names the tab it is on, to come back to it.
 	mux.HandleFunc("POST /api/update/install", func(rw http.ResponseWriter, r *http.Request) {
+		if update.CompanyMode == "1" {
+			http.Error(rw, "公司版本请使用组合安装器更新 Magpie 与 Nikou", http.StatusConflict)
+			return
+		}
 		var in struct {
 			View string `json:"view"`
 			// When: "now" restarts whatever is in flight, "cancel" stops

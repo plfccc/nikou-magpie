@@ -151,9 +151,12 @@
       return b;
     },
     // a pick of one of opts ([{ v, name }]), in the app's menu
-    menu(opts, value, head, onPick) {
+    menu(opts, value, head, onPick, layout = {}) {
       const b = el("button", "proto pick");
       b.type = "button";
+      b.setAttribute("aria-haspopup", "menu");
+      b.setAttribute("aria-expanded", "false");
+      b.disposeMenu = () => { if (protoMenu?.anchor === b) closeProtoMenu(); };
       const paint = () => {
         const o = opts.find((x) => x.v === value);
         b.replaceChildren(el("span", "", o ? o.name : String(value)), svg(CHEV, 11, 1.6));
@@ -161,11 +164,12 @@
       paint();
       b.onclick = (ev) => {
         ev.stopPropagation();
+        if (protoMenu?.anchor === b) return closeProtoMenu();
         openProtoMenu(b, opts.map((o) => ({ ...o, literalName: true, note: "" })), value, (v) => {
           value = v;
           paint();
           onPick(v);
-        }, head, "", "right");
+        }, head, layout.className || "", layout.align || "right");
       };
       return b;
     },

@@ -1,0 +1,24 @@
+.row.company-version { align-items: flex-start; }
+.company-version > .who { flex: 1; min-width: 0; }
+.company-version > .val { display: none; }
+.company-version .sub { width: 100%; white-space: normal; overflow: visible; }
+.cu-version { color: var(--fg); margin: 6px 0 14px; font-size: 13px; }
+.cu-list { border: 1px solid var(--line); border-radius: 9px; overflow: hidden; }
+.cu-entry { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 8px 16px; padding: 12px; }
+.cu-entry + .cu-entry { border-top: 1px solid var(--line); }
+.cu-heading { display: flex; align-items: center; gap: 9px; flex-wrap: wrap; color: var(--fg); }
+.cu-source { color: var(--muted); font-size: 11px; }
+.cu-state { border-radius: 5px; padding: 3px 7px; font-size: 12px; background: var(--pill); color: var(--fg); }
+.cu-current { color: var(--green, #16834a); }
+.cu-changed { color: var(--orange, #a46513); }
+.cu-unknown, .cu-error { color: var(--red); }
+.cu-error { grid-column: 1 / -1; font-size: 12px; overflow-wrap: anywhere; }
+.cu-hint { margin: 10px 0; line-height: 1.6; }
+.cu-controls { display: flex; align-items: center; gap: 10px 16px; flex-wrap: wrap; margin: 14px 0; }
+.cu-auto { display: flex; align-items: center; gap: 6px; cursor: pointer; }
+.cu-auto input { margin: 0; }
+.cu-time { font-size: 11px; }
+.cu-details { border-top: 1px solid var(--line); padding-top: 10px; }
+.cu-details summary { cursor: pointer; width: fit-content; }
+.cu-detail { padding: 10px 0 0; overflow-wrap: anywhere; line-height: 1.8; font-size: 11px; }
+@media (max-width: 600px) { .cu-controls { align-items: flex-start; } .cu-auto { flex-basis: 100%; } }

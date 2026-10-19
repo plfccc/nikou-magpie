@@ -38,6 +38,7 @@
     function pause() {
       clearTimeout(timer);
       timer = null;
+      root?.querySelectorAll("[data-pick]").forEach(button => button.disposeMenu?.());
       if (!busy) controller?.abort();
     }
 
@@ -77,7 +78,8 @@
 
     function menu(host, kind, options, value, title, onPick) {
       options = options.filter((item) => !item.disabled);
-      const button = ui.menu(options, value, words(title), onPick);
+      host.firstElementChild?.disposeMenu?.();
+      const button = ui.menu(options, value, words(title), onPick, { align: "left", className: "nikou-menu" });
       button.dataset.pick = kind;
       button.dataset.unavailable = String(!options.some((item) => !item.disabled));
       host.replaceChildren(button);

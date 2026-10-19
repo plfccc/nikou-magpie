@@ -28,6 +28,18 @@
 
 ## 验证
 
+### 版本页上游检测
+
+公司构建的版本区优先展示公司版和 Nikou 版本，以及两上游的“有更新／已同步上游／检查失败”状态；仓库、分支、集成提交和上游提交放入默认折叠的技术详情，刷新时保留展开状态。检查时间、立即检查与自动检测开关集中展示，开关复用现有设置；发现差异时提示需要集成验证后发布公司版。支持手动检查；启动五秒后及设置中的自动检测周期检查，关闭自动更新时仅手动检查。检测只读，不下载或安装，发现分支提交不同仅表示有差异，仍须通过组合维护脚本集成、验证和发布。公司版安装接口拒绝独立官方升级。
+
+[上游检测](../../internal/gui/company_upstreams.go) 将构建时的 `company/upstreams.lock.json` 与 policy 嵌入 EXE，不依赖安装机存在源码。Magpie 查询固定 GitHub commit API，匿名 API 限流（403 且剩余额度为0，或429）时回退本机只读 Git 查询，无需额外 Token；其他 HTTP 失败不笼统解释为权限问题；Nikou 使用本机 Git 的只读 ls-remote 查询公司 GitLab，复用 Git 凭证助手，禁止交互式登录并限时15秒。应用不读取凭证，不回传 Git stderr。未安装 Git、认证失败、网络失败和无效响应均显示未知，不声称已是最新。页面分别展示 GitHub/GitLab 来源及仓库地址。结果在进程内缓存；重新启动重新检查。
+
+### Nikou 选择菜单
+
+`ui.menu` 支持 `layout.align`、`layout.className` 与 `disposeMenu`。Nikou 重建选择器或隐藏页面时清理挂在 body 的菜单，重复点击触发器关闭，Escape 和点击外部关闭；弹层与触发器左对齐。`nikou.test.cjs` 在 Chromium/WebKit、420/1100 宽度验证生命周期与定位。
+
+`go test -tags nogui ./internal/gui -run 'TestCompanyUpstreams|TestCompanyVersion'` 验证基线差异、未知与凭证边界；`company-upstreams.test.cjs` 验证两浏览器宽窄窗口的版本行展示与手动检查。
+
 `go test ./internal/nikou ./internal/cli ./internal/gui ./internal/update -run 'Nikou|Console|AccountReceipt|Company|Builtin'` 验证本机桥接、回执与内置守卫；维护脚本通过 `node --test company/tests/*.test.mjs` 验证真实临时 Git、路径、离线迁移、故障回滚。
 
 `node company/scripts/check-contract.mjs <Nikou源码绝对路径>` 构建 Go 探针并启动隔离用户目录中的 Nikou 产物控制台，只验证 hello/status，不启动 Worker。`internal/gui/tests/nikou.test.cjs` 在 Chromium/WebKit 验证交互、错误处理、实例变化与轮询暂停。

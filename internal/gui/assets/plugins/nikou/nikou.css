@@ -10,7 +10,8 @@
 .nikou-state dd { margin: 5px 0 0; overflow-wrap: anywhere; }
 .nikou-fields { align-items: flex-end; margin: 14px 0; }
 .nikou-fields label { display: flex; min-width: 0; flex: 1 1 180px; flex-direction: column; gap: 7px; }
-.nikou-fields .pick { max-width: 100%; justify-content: space-between; }
+.nikou-fields .pick { width: 100%; max-width: 100%; justify-content: space-between; padding: 8px 10px; border: 1px solid var(--line); border-radius: 7px; }
+.pop.proto-menu.nikou-menu { width: 240px; min-width: 180px; max-width: calc(100vw - 16px); }
 .nikou-fields .pick > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .nikou-error { color: var(--red); font-size: 12px; white-space: pre-wrap; overflow-wrap: anywhere; margin: 12px 0; }
 .nikou-account { padding: 12px 0; gap: 12px; flex-wrap: wrap; }

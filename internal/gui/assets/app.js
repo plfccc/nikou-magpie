@@ -21883,6 +21883,7 @@ async function renderUpdate(r, u) {
     u = await api(updatePath("update")).catch(() => null);
     if (!u || !r.isConnected || (updateSeq.get(r) || 0) !== seq) return;
   } else if (!r.isConnected) return;
+  if (u.upstreams) return renderCompanyUpstreams(r, u);
   const who = r.querySelector(".who"), val = r.querySelector(".val");
   const sub = who.querySelector(".sub") || who.appendChild(el("div", "sub"));
   sub.title = "";
