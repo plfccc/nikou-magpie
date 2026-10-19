@@ -15,12 +15,12 @@
 | 最终UTF-8、公司运行时更新隔离及旧版本比较回归 | 11/11，通过；UTF-8测试已先复现中文损坏 |
 | Nikou ESM/DTS、privacy-scan、npm包清单 | 通过 |
 | 真实Go→Nikou hello/status | 源码与构建产物均通过；隔离HOME/USERPROFILE/APPDATA/LOCALAPPDATA，Worker stopped |
-| Nikou Windows全套 | **未通过**：786项，714通过、71失败、1取消；API模式测试挂起后受控终止 |
+| Nikou Windows全套 | 修复后 **796/796通过**，0失败、0取消、0跳过；详见 [Windows修复记录](windows-fixes.md) |
 | 上游完整GUI 799文件套件、Windows桌面WebView2人工验收 | 未完成；不能从页面模拟测试推导原生桌面全部通过 |
 | 真实原生账号与Worker生命周期 | 未运行 |
-| 正式最终组合包、原生安装/回滚发布证据 | 未签发；全套Nikou失败仍阻断正式构建链 |
+| 正式最终组合包、原生安装/回滚发布证据 | 未签发；仍需完整产品发布验收，不以本机开发预览替代 |
 
-全套失败涉及POSIX权限位断言、Windows脚本执行与原生Runner等兼容问题。没有通过删除测试或跳过门禁将其转绿。后续应在公司分支逐项解决，并在目标Windows环境重跑后才进入正式发布。
+初轮全套失败涉及POSIX权限位断言、Windows脚本执行与原生Runner等兼容问题，现已修复并在Windows重跑通过。没有通过删除测试或跳过门禁将其转绿。完整GUI、真实账号与Worker生命周期仍需独立产品验收。
 
 开发预览位于本机 `artifacts/company/preview/`：EXE版本为 `1.0.0-dev.1`，Nikou npm包为当前0.1.89公司源码构建。它们不是已通过组合安装门禁的正式安装包，未上传Release。源码和实际提交以 lock及Git历史为准，预览文件不纳入Git。
 

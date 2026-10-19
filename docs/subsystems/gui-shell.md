@@ -1,5 +1,7 @@
 # GUI app shell
 
+公司开发预览入口设置 `NIKOU_PREVIEW_NO_LIBRARY_SYNC=1` 时，`Run` 跳过启动时的 `library.Sync()` 和 `library.KeepLinked()`，防止首次打开便把导入库写入现有 agent 配置。默认启动行为保持不变；该开关不禁用页面里的手动库编辑与同步，预览不是只读沙盒。
+
 The desktop app has a tray (menu bar) icon whose click drops a compact
 panel, and a regular window. Both show one small web UI served from
 embedded assets. The page talks to Go over a JSON API on the same handler,

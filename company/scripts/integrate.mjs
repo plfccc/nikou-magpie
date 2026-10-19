@@ -13,19 +13,21 @@ import { installRelease, rollbackRelease } from './lib/install.mjs';
 import { planMigration, applyMigration, restoreMigration } from './lib/migration.mjs';
 import { launchInstalled } from './lib/runtime.mjs';
 import { planProfile, applyProfile } from './lib/profile.mjs';
+import { planLibraryImport, applyLibraryImport } from './lib/library-import.mjs';
 
 const usage = '用法：node company/scripts/integrate.mjs doctor --mode source|artifact --json\n      node company/scripts/integrate.mjs check-upstreams --channel stable --out artifacts/upstreams/candidate.json\n      node company/scripts/integrate.mjs sync --from-report 文件 --component magpie|nikou|both [--dry-run] [--resume]\n      node company/scripts/integrate.mjs verify --profile source|artifacts|install [--allow-dirty]\n      node company/scripts/integrate.mjs build --platform windows --arch amd64 --version x.y.z\n      node company/scripts/integrate.mjs package --version x.y.z\n      node company/scripts/integrate.mjs release-plan --version x.y.z --manifest 路径';
 const runtimeUsage = '\n      install --manifest <绝对路径> --install-root <绝对目录> --offline\n      rollback --transaction <ID> --install-root <绝对目录> --offline\n      run --component magpie|console --install-root <绝对目录> [--port 19736]\n      migrate plan|apply|restore（显式配置路径与确认参数见company/docs/migration.md）\n      profile plan|apply（网关模型白名单导入，参数见company/docs/update.md）';
 export async function main(argv = process.argv.slice(2)) {
   try {
     const [command, ...rawArgs] = argv;
-    const migrationAction = ['migrate', 'profile'].includes(command) ? rawArgs[0] : undefined;
-    const args = ['migrate', 'profile'].includes(command) ? rawArgs.slice(1) : rawArgs;
-    if (command === '--help' || command === 'help') return { exitCode: 0, message: usage + runtimeUsage };
+    const migrationAction = ['migrate', 'profile', 'library'].includes(command) ? rawArgs[0] : undefined;
+    const args = ['migrate', 'profile', 'library'].includes(command) ? rawArgs.slice(1) : rawArgs;
+    if (command === '--help' || command === 'help') return { exitCode: 0, message: usage + runtimeUsage + '\n      library plan|apply（CC Switch 的 Skills/MCP 入库，参数见 company/docs/library-import.md）' };
     const common = ['json', 'root', 'nikou-dir'];
     const allowed = { doctor: ['mode', ...common], 'check-upstreams': ['channel', 'out', ...common], sync: ['from-report', 'component', 'dry-run', 'resume', 'out', ...common], verify: ['profile', 'allow-dirty', 'build-file', 'manifest', 'install-evidence', 'npm-cli', ...common], build: ['platform', 'arch', 'version', 'source-evidence', 'npm-cli', ...common], package: ['version', 'build-file', 'artifacts-evidence', ...common], 'release-plan': ['version', 'manifest', 'install-evidence', 'channel', ...common], install: ['manifest', 'install-root', 'offline', ...common], rollback: ['transaction', 'install-root', 'offline', ...common] };
     allowed.migrate = ['settings-path', 'worker-config-path', 'runtime-scopes-path', 'master-credentials-path', 'managed-dir', 'migration-id', 'request-id', 'old-process-ids', 'offline', 'private-directory-confirmed', ...common];
     allowed.run = ['component', 'install-root', 'port', ...common];
+    allowed.library = ['database-path', 'skills-root', 'magpie-config-dir', 'backup-dir', 'out', 'from-plan', 'confirmed', 'private-directory-confirmed', ...common];
     allowed.profile = ['worker-config-path', 'gateway-url', 'api-key-env', 'models-json', 'model', 'api-type', 'out', 'from-plan', 'managed-dir', 'offline', 'private-directory-confirmed', 'confirmed', ...common];
     if (!allowed[command]) throw new IntegrationError(2, `未支持命令：${command ?? ''}\n${usage}`);
     if (command === 'migrate' && !['plan', 'apply', 'restore'].includes(migrationAction)) throw new IntegrationError(2, 'migrate必须选择plan、apply或restore');
@@ -39,6 +41,18 @@ export async function main(argv = process.argv.slice(2)) {
     }
     const options = { root: path.resolve(flags.root ?? process.cwd()), nikouDir: flags['nikou-dir'], npmCli: flags['npm-cli'], buildFile: flags['build-file'], sourceEvidenceFile: flags['source-evidence'], artifactEvidenceFile: flags['artifacts-evidence'], manifest: flags.manifest, installEvidenceFile: flags['install-evidence'] };
     if (command === 'run') return launchInstalled({ installRoot: flags['install-root'], component: flags.component, port: flags.port === undefined ? 19736 : Number(flags.port) });
+    if (command === 'library') {
+      if (!['plan', 'apply'].includes(migrationAction)) throw new IntegrationError(2, 'library 必须选择 plan 或 apply');
+      const libraryOptions = { databasePath: flags['database-path'], skillsRoot: flags['skills-root'], magpieConfigDir: flags['magpie-config-dir'], backupDir: flags['backup-dir'] };
+      if (migrationAction === 'plan') {
+        const plan = planLibraryImport(libraryOptions);
+        if (flags.out) await writeReport(path.resolve(options.root, flags.out), plan);
+        return { exitCode: 0, plan };
+      }
+      if (!flags['from-plan']) throw new IntegrationError(2, 'library apply 需要 --from-plan');
+      const plan = JSON.parse(await readFile(path.resolve(options.root, flags['from-plan']), 'utf8'));
+      return { exitCode: 0, ...await applyLibraryImport({ ...libraryOptions, plan, confirmed: flags.confirmed === true, privateDirectoryConfirmed: flags['private-directory-confirmed'] === true }) };
+    }
     if (command === 'profile') {
       if (migrationAction === 'plan') {
         const plan = await planProfile({ workerConfigPath: flags['worker-config-path'], gatewayUrl: flags['gateway-url'], apiKeyEnv: flags['api-key-env'], models: flags['models-json'] ? JSON.parse(flags['models-json']) : undefined, model: flags.model, apiType: flags['api-type'] });

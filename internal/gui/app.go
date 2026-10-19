@@ -466,20 +466,23 @@ func Run(version string, showMain bool, link string) error {
 	}
 	updates.start()
 	news.start()
-	// the library written into the agents again, once: one installed or
-	// updated since (or an edit by hand) gets it without a visit to the page
-	go func() {
-		if res, err := library.Sync(); err != nil {
-			log.Println("library sync:", err)
-		} else {
-			for _, p := range res.Problems {
-				log.Println("library sync:", p.Agent, p.What, p.Error)
+	// 开发预览在首次打开时保持导入结果只读；正式运行仍会把库同步到 agent。
+	if os.Getenv("NIKOU_PREVIEW_NO_LIBRARY_SYNC") != "1" {
+		// the library written into the agents again, once: one installed or
+		// updated since (or an edit by hand) gets it without a visit to the page
+		go func() {
+			if res, err := library.Sync(); err != nil {
+				log.Println("library sync:", err)
+			} else {
+				for _, p := range res.Problems {
+					log.Println("library sync:", p.Agent, p.What, p.Error)
+				}
 			}
-		}
-		// a set kept in a file of the user's (~/.agents/AGENTS.md) is
-		// edited outside magpie: the agents get each change
-		library.KeepLinked(30 * time.Second)
-	}()
+			// a set kept in a file of the user's (~/.agents/AGENTS.md) is
+			// edited outside magpie: the agents get each change
+			library.KeepLinked(30 * time.Second)
+		}()
+	}
 
 	h.tray = h.app.SystemTray.New()
 	if runtime.GOOS == "linux" {
