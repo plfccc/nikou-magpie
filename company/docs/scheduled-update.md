@@ -4,7 +4,7 @@
 
 入口：`company/scripts/scheduled-update.ps1`。先用现有 check-upstreams 只读查询两个上游，未变化直接结束；有更新且两个公司工作树干净时，由本机已登录的 Codex CLI 执行固定维护指令，消耗当前 Codex 账户额度。执行器非交互运行，在当前用户权限下可构建和安装。依赖 Git、Node、固定 Go、Playwright、Codex 登录态及公司网络；路径配置在入口脚本中。
 
-发布范围是本机开发预览版本包及受管安装，**不上传 GitHub Release、不推送源码**。正式发布资格仍由组合门禁决定，预览包不能变成正式包。维护规则见 [执行指令](../scripts/scheduled-update-prompt.md)。冲突、脏目录、测试失败或需要中断 Worker 时停止并记录，不伪造成功。只允许重启绝对路径校验后的受管 GUI。
+版本包只安装本机，不上传 GitHub Release。公司 Magpie 源码允许快进推送到已授权的私有仓库 `plfccc/nikou-magpie` 的 main，不上传 Nikou 源码或组合资产。版本号以 `company/version.json` 为准，从 `1.0.0` 开始按 SemVer 递增，不再使用 dev 后缀。正式发布资格仍由组合门禁决定，预览包不能变成正式包。维护规则见 [执行指令](../scripts/scheduled-update-prompt.md)。冲突、脏目录、测试失败或需要中断 Worker 时停止并记录，不伪造成功。只允许重启绝对路径校验后的受管 GUI。
 
 日志：`%LOCALAPPDATA%\NikouMagpie\maintenance\runs\时间戳`，包含 upstreams.json、codex.log、result.json、result.md。最新状态在同根 latest.json。CLI 登录失效、无额度或任务被阻止时会记录失败。
 
