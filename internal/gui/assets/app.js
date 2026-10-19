@@ -11842,7 +11842,7 @@ async function followSignIn(id) {
     if (signing?.id !== id) continue;
     if (st.state === "waiting" || st.state === "installing") {
       // the CLI it needed is in: now the vendor's page can open
-      if (signing.state === "installing" && st.state === "waiting" && st.url) {
+      if (signing.state === "installing" && st.state === "waiting" && st.url && !st.opened) {
         api("open", { url: st.url }).catch((e) => {
           if (signing?.id === id) { signing = { ...signing, openError: e.message }; renderProviders(); }
         });
@@ -11927,7 +11927,8 @@ async function startPluginSignIn(sub, method, inputs = {}, o = {}) {
     if (o.user) body.user = o.user;
     if (o.proxy != null) body.proxy = o.proxy;
     signing = { ...(await api("plugin-signin", body)), ...keep };
-    if (web && signing.url) api("open", { url: signing.url });
+    // opened: the plugin's own CLI opened the page already (Grok Build's)
+    if (web && signing.url && !signing.opened) api("open", { url: signing.url });
     renderProviders();
     followSignIn(signing.id);
   } catch (e) {
@@ -13120,6 +13121,8 @@ function balanceError(err) {
   if (/takes the API key, not the access token/.test(err)) return t("The Balance URL …/api/usage/token takes the API key, not the access token — set it to …/api/user/self in the provider's settings");
   if (/takes the API key, not the login token/.test(err)) return t("The Balance URL …/v1/usage takes the API key, not the login token — set it to …/api/v1/user/profile in the provider's settings");
   if (/New-Api-User/i.test(err)) return t("Add the header New-Api-User = your user ID (shown in the site's personal settings) to the provider's Headers");
+  // errOpenCodeNoBalance: not a reading that failed
+  if (/^OpenCode tells no API key its balance/.test(err)) return t("OpenCode doesn't tell an API key its balance — see Zen's credits in the OpenCode console, Overview → Credits");
   return "";
 }
 
@@ -17793,12 +17796,13 @@ function quotaWindows(sub) {
     e.title = sub.error;
     // read again from here too: a failed reading is the one most wanted
     e.prepend(quotaRefresh(sub));
-    // a plan that needs the access key the provider hasn't: the way to
-    // give it, one click away (#1821)
-    if (sub.needsAccessKey && sub.provider) {
-      const go = el("button", "quota-fix", t("Open settings"));
+    // one click away: the access key a plan needs (#1821), or the
+    // vendor's page for a balance it tells no key (seeAt, Zen's console)
+    const key = sub.needsAccessKey && sub.provider;
+    if (key || sub.seeAt) {
+      const go = el("button", "quota-fix", t(key ? "Open settings" : "Open the console ↗"));
       go.type = "button";
-      go.onclick = (ev) => { ev.stopPropagation(); openProvider(sub.provider); };
+      go.onclick = (ev) => { ev.stopPropagation(); key ? openProvider(sub.provider) : api("open", { url: sub.seeAt }).catch(() => {}); };
       e.append(" ", go);
     }
     return e;
@@ -23384,7 +23388,18 @@ if (mode === "window") {
   setTimeout(() => { sideGwRead.due = true; sideGwRead(); }, 1500);
 }
 
-document.addEventListener("visibilitychange", () => { if (!document.hidden) { load(true); wag(); } });
+// loadBack: a window shown again hears visibilitychange and focus together;
+// one read for both. A read asked over a second ago gets one more after it.
+function loadBack() {
+  const f = loadBack.flight;
+  if (f && performance.now() - f.at < 1000) return f.done;
+  if (f) return (f.next ||= f.done.then(() => loadBack()));
+  const flight = { at: performance.now() };
+  flight.done = load(true).finally(() => { if (loadBack.flight === flight) loadBack.flight = null; });
+  loadBack.flight = flight;
+  return flight.done;
+}
+document.addEventListener("visibilitychange", () => { if (!document.hidden) { loadBack(); wag(); } });
 // an agent's config can be rewritten, or the agent run round magpie, while the
 // window is up: ask what drifted now and then, and redraw only on a change —
 // never under an open menu
@@ -23434,7 +23449,7 @@ setInterval(async () => {
   ro.observe($("#usageCost"));
   new MutationObserver(later).observe(head, { childList: true, subtree: true, characterData: true });
 }
-window.addEventListener("focus", () => load(true));
+window.addEventListener("focus", () => loadBack());
 setInterval(renderUpdateBadge, 15 * 60 * 1000); // a window left open still hears of a new version
 // renderPluginDot puts a dot on Plugins while a plugin's update waits for
 // the reader (someone else's plugin, or one pinned; the community's update
