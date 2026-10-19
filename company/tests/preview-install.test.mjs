@@ -78,7 +78,7 @@ test('控制台入口拒绝端口冲突和运行中的 Worker，不执行 Worker
 });
 test('完整暂存和隔离检查后才激活；后续依赖安装失败保留原版本', async t => {
   const f = await fixture(t);
-  const nikouDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../../nikou-cli-integration');
+  const nikouDir = process.env.NIKOU_TEST_SOURCE_DIR ?? path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../../nikou-cli-integration');
   const tar = createRequire(path.join(nikouDir, 'package.json'))('tar');
   const packageDir = path.join(f.root, 'package'); await mkdir(path.join(packageDir, 'dist'), { recursive: true });
   const pkgBytes = await readFile(path.join(nikouDir, 'package.json'));

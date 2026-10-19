@@ -23,7 +23,9 @@ type Note struct {
 // NotesFeed is where the notes of past releases are listed: beside the
 // update feed, on magpie's site. MAGPIE_NOTES_FEED points it elsewhere.
 func NotesFeed() string {
-	if CompanyMode == "1" { return "" }
+	if CompanyMode == "1" {
+		return ""
+	}
 	if f := os.Getenv("MAGPIE_NOTES_FEED"); f != "" {
 		return f
 	}
@@ -33,7 +35,9 @@ func NotesFeed() string {
 // ReleasePage is version's page on GitHub, where its notes are when the
 // site can't give them (#661).
 func ReleasePage(version string) string {
-	if CompanyMode == "1" { return "" }
+	if CompanyMode == "1" {
+		return ""
+	}
 	return "https://github.com/yetone/magpie-releases/releases/tag/v" + strings.TrimPrefix(strings.TrimSpace(version), "v")
 }
 

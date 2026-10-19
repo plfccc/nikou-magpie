@@ -11,6 +11,9 @@ async function sourceVerify(options, checks) {
   const isolated = await sandbox(reports);
   try {
     const env = isolated.env;
+    // 只复用浏览器二进制缓存，用户配置仍留在隔离目录。
+    env.PLAYWRIGHT_BROWSERS_PATH = process.env.PLAYWRIGHT_BROWSERS_PATH ?? (process.platform === 'win32' && process.env.LOCALAPPDATA ? path.join(process.env.LOCALAPPDATA, 'ms-playwright') : undefined);
+    env.NIKOU_TEST_SOURCE_DIR = ctx.nikouDir;
     // Go缓存保留在显式路径，测试HOME仍隔离于真实用户配置。
     const caches = await command(ctx, checks, 'Go缓存路径', { file: 'go', args: ['env', '-json', 'GOPATH', 'GOMODCACHE', 'GOCACHE'], cwd: ctx.root }, process.env, false);
     if (!caches.exitCode && caches.stdout.trim()) Object.assign(env, JSON.parse(caches.stdout));
