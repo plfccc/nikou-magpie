@@ -81,6 +81,7 @@
       host.firstElementChild?.disposeMenu?.();
       const button = ui.menu(options, value, words(title), onPick, { align: "left", className: "nikou-menu" });
       button.dataset.pick = kind;
+      button.setAttribute("aria-label", words(title));
       button.dataset.unavailable = String(!options.some((item) => !item.disabled));
       host.replaceChildren(button);
     }
@@ -312,7 +313,7 @@
       root.innerHTML = `<div class="nikou-head"><div><h2></h2><p data-connection></p></div><div class="nikou-tools" data-tools></div></div>
         <div class="nikou-error" role="alert" hidden></div><p class="nikou-note" data-notice role="status"></p>
         <section class="list nikou-card"><h3 data-heading="status"></h3><dl class="nikou-state"></dl><div class="nikou-tools" data-worker></div></section>
-        <section class="list nikou-card"><h3 data-heading="runtime"></h3><div class="nikou-fields"><label><span data-engine-label></span><div data-engine></div></label></div><p class="nikou-note" data-catalog-note></p><div data-scopes></div></section>
+        <section class="list nikou-card"><h3 data-heading="runtime"></h3><div class="nikou-fields"><div class="nikou-field"><span data-engine-label></span><div data-engine></div></div></div><p class="nikou-note" data-catalog-note></p><div data-scopes></div></section>
         <section class="list nikou-card"><h3 data-heading="accounts"></h3><div data-accounts></div></section>`;
       // 页面沿用纵向 flex 滚动容器；卡片必须保持内容高度，避免按钮与相邻内容重叠。
       for (const child of root.children) child.style.flexShrink = "0";
@@ -341,7 +342,7 @@
         section.append(text("h3", "", label));
         const fields = ui.el("div", "nikou-fields");
         for (const [field, title] of [["model", "模型"], ["effort", "思考档位"]]) {
-          const wrap = ui.el("label"), holder = ui.el("div");
+          const wrap = ui.el("div", "nikou-field"), holder = ui.el("div");
           holder.dataset[field] = key;
           wrap.append(text("span", "", title), holder);
           fields.append(wrap);
