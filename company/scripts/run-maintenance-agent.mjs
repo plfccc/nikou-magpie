@@ -1,0 +1,14 @@
+import { spawn } from 'node:child_process';
+import { createWriteStream, readFileSync } from 'node:fs';
+import path from 'node:path';
+const [root, logRoot, codex] = process.argv.slice(2);
+if (!root || !logRoot || !codex) throw new Error('缺少维护执行路径');
+const log = createWriteStream(path.join(logRoot, 'codex.log'), { encoding: 'utf8' });
+const args = [codex, 'exec', '-C', root, '-s', 'danger-full-access', '-c', 'approval_policy="never"', '--color', 'never', '--output-schema', path.join(root, 'company/scripts/scheduled-update-result.schema.json'), '-o', path.join(logRoot, 'result.json'), '-'];
+const child = spawn(process.execPath, args, { cwd: root, windowsHide: true, shell: false, stdio: ['pipe', 'pipe', 'pipe'] });
+child.stdout.pipe(log, { end: false });
+child.stderr.pipe(log, { end: false });
+child.stdin.on('error', () => {});
+child.stdin.end(readFileSync(path.join(logRoot, 'instructions.md')));
+child.once('error', error => { log.end(error.message); process.exitCode = 1; });
+child.once('close', code => { log.end(); process.exitCode = code ?? 1; });
