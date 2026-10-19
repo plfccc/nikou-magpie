@@ -15,6 +15,6 @@ func init() {
 		Name: "Nikou 管理", Sub: "查看运行状态、设置会话模型并管理本地工作进程",
 		Parts:    []pluginrt.Part{{Slot: "nav.page", Key: "nikou"}},
 		Settings: Settings{Port: 19736, PollSeconds: 10},
-		Client:   []string{"nikou.css", "client.js"},
+		Client:   []string{"nikou.css", "company.js", "client.js"},
 	})
 }

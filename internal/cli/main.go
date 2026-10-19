@@ -331,6 +331,8 @@ func run(args []string) error {
 		return runGUI(true, "")
 	case "tray":
 		return runGUI(false, "")
+	case "nikou-hst-sync":
+		return nikouHSTSync(args[1:])
 	case "-Embedding":
 		// Windows starting magpie for a click on one of its notifications
 		// (a usage alert, #368) left in the Action Center after it quit:

@@ -1,7 +1,7 @@
 (() => {
   magpie.plugin("nikou", (ctx) => {
     const { ui } = ctx;
-    let root, timer, observer, controller, reading = null;
+    let root, timer, observer, controller, reading = null, companyPanel;
     let hello = null, snapshot = null, catalogs = {}, accounts = null;
     let selectedEngine = "", drafts = {}, dirty = false, busy = false, checked = false, disposed = false;
     let errorText = "", noticeText = "", catalogTurn = 0;
@@ -355,6 +355,8 @@
         section.append(fields, saved);
         $("[data-scopes]").append(section);
       }
+      companyPanel?.dispose();
+      companyPanel = window.mountNikouCompany?.(root, ui);
       observer?.disconnect();
       observer = new MutationObserver(() => {
         if (!active()) pause();
@@ -371,11 +373,12 @@
     ctx.onConfig(() => { checked = false; hello = null; pause(); if (active()) refresh(); });
     ctx.onDispose(() => {
       disposed = true;
+      companyPanel?.dispose();
       pause();
       controller?.abort();
       observer?.disconnect();
       document.removeEventListener("visibilitychange", visibility);
     });
-    ctx.slots.add("page", { key: "nikou", title: "Nikou 管理", mount, open: refresh, relang: paint });
+    ctx.slots.add("page", { key: "nikou", title: "Nikou 管理", mount, open: () => { refresh(); companyPanel?.refresh(); }, relang: paint });
   });
 })();

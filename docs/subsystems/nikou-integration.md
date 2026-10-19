@@ -28,6 +28,12 @@
 
 ## 验证
 
+### 公司工具与 Job
+
+Nikou 内置页增加公司工具及 Job 卡片，调用固定桥接路由 `company-tools`、`company-tools/action`、`jobs`、`jobs/detail`、`jobs/log`、`jobs/service`、`jobs/action`。实际操作与回执仍在 Nikou 控制台，Magpie 不另建任务库和调度器。工具升级按公司 hosted 主包／group 依赖分工，初始化不回传凭据；华盛通 MCP 通过受管 EXE 的 `nikou-hst-sync --json` 使用资源库事务及备份同步。写操作确认、去重及未知结果规则与原桥接一致。Job 手工执行的 accepted 仅表示已提交，页面不宣称任务执行成功。Windows 登录启动与进程身份校验由 Nikou 服务层负责。迁移边界见[公司工具状态](../../company/docs/company-tools-migration.md)。
+
+`nikou-company.test.cjs` 在 Chromium/WebKit 验证状态展示、内容转义及未知操作回执不重放；`TestCompanyHSTPreservesAssignmentsAndEnvironment` 验证资源库迁移保持原范围且重复操作无额外修改。Nikou 的 `company-tools.test.ts` 验证凭据不回传、离线未知及操作白名单。
+
 ### 版本页上游检测
 
 公司构建的版本区优先展示公司版和 Nikou 版本，以及两上游的“有更新／已同步上游／检查失败”状态；仓库、分支、集成提交和上游提交放入默认折叠的技术详情，刷新时保留展开状态。检查时间、立即检查与自动检测开关集中展示，开关复用现有设置；发现差异时提示需要集成验证后发布公司版。支持手动检查；启动五秒后及设置中的自动检测周期检查，关闭自动更新时仅手动检查。检测只读，不下载或安装，发现分支提交不同仅表示有差异，仍须通过组合维护脚本集成、验证和发布。公司版安装接口拒绝独立官方升级。

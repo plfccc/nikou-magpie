@@ -42,14 +42,14 @@ func NewConsoleClient(base, tokenPath string) (*ConsoleClient, error) {
 func allowedRoute(method, route string) bool {
 	if method == "GET" {
 		switch route {
-		case "hello", "status", "runtime/catalog", "accounts":
+		case "hello", "status", "runtime/catalog", "accounts", "company-tools", "jobs", "jobs/detail", "jobs/log", "jobs/service":
 			return true
 		}
 		return strings.HasPrefix(route, "operations/") && safeID.MatchString(strings.TrimPrefix(route, "operations/"))
 	}
 	if method == "POST" {
 		switch route {
-		case "runtime/select", "worker/control", "accounts/select", "accounts/refresh":
+		case "runtime/select", "worker/control", "accounts/select", "accounts/refresh", "company-tools/action", "jobs/action", "jobs/service":
 			return true
 		}
 	}
@@ -90,6 +90,12 @@ func (c *ConsoleClient) exchange(ctx context.Context, method, route string, quer
 	}
 	if route == "accounts/refresh" {
 		limit = 60 * time.Second
+	}
+	if route == "company-tools" {
+		limit = 45 * time.Second
+	}
+	if route == "jobs" || route == "jobs/detail" || route == "jobs/log" || route == "jobs/service" {
+		limit = 30 * time.Second
 	}
 	ctx, cancel := context.WithTimeout(ctx, limit)
 	defer cancel()
