@@ -4,6 +4,8 @@
   [string]$NikouRoot = 'D:\project\hst\nikou\nikou-cli-integration'
 )
 $ErrorActionPreference = 'Stop'
+$OutputEncoding = New-Object Text.UTF8Encoding($false)
+[Console]::OutputEncoding = $OutputEncoding
 $stateRoot = Join-Path $env:LOCALAPPDATA 'NikouMagpie\maintenance'
 New-Item -ItemType Directory -Force $stateRoot | Out-Null
 $logRoot = Join-Path $stateRoot ('runs\' + (Get-Date -Format 'yyyyMMdd-HHmmss'))
@@ -40,8 +42,13 @@ try {
     $instructions += "`n本次根目录：$Root`nNikou根目录：$NikouRoot`n本次上游报告：$reportPath`n本次日志目录：$logRoot`n"
     $output = Join-Path $logRoot 'result.json'
     $instructions += "`n将详细结果写入本次日志目录 result.md；最终严格按 JSON Schema 输出状态、中文摘要和证据文件绝对路径。`n"
-    $instructions | & $node $codex exec -C $Root -s danger-full-access -c 'approval_policy="never"' --color never --output-schema (Join-Path $Root 'company\scripts\scheduled-update-result.schema.json') -o $output - *> (Join-Path $logRoot 'codex.log')
-    if ($LASTEXITCODE -ne 0) { throw '自动维护失败，详见本次 codex.log；未将失败标记为成功' }
+    # Windows PowerShell 会把原生命令 stderr 当作错误记录；CLI 的正常进度不应中止任务。
+    $ErrorActionPreference = 'Continue'
+    try {
+      $instructions | & $node $codex exec -C $Root -s danger-full-access -c 'approval_policy="never"' --color never --output-schema (Join-Path $Root 'company\scripts\scheduled-update-result.schema.json') -o $output - *> (Join-Path $logRoot 'codex.log')
+      $agentExit = $LASTEXITCODE
+    } finally { $ErrorActionPreference = 'Stop' }
+    if ($agentExit -ne 0) { throw '自动维护失败，详见本次 codex.log；未将失败标记为成功' }
     $reply = Get-Content -Raw -Encoding utf8 $output | ConvertFrom-Json
     if ($reply.status -notin @('installed', 'up-to-date')) { throw "维护未完成：$($reply.status)：$($reply.summary)；详见 $output" }
     if (-not (Test-Path -LiteralPath $reply.evidenceFile -PathType Leaf)) { throw '维护执行器没有生成证据文件' }
