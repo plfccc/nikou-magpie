@@ -14,6 +14,14 @@ Windows Job 服务能力迁入 Nikou CLI 服务层。健康端点确认服务身
 
 ## Windows 图标修复
 
+## 1.0.2 本机验收
+
+安装器两组件隔离自检通过；真实控制台握手报告 companyTools/jobs 能力，检测返回 HST MCP 1.1.15→1.1.16、Nikou 工具 2.0.70→2.0.74。Job 服务本机未运行且未注册登录启动，接口明确返回未连接；未启动真实 Job，也未执行真实工具更新和交互初始化。Worker PID 37208、启动时间 2026-10-16 16:15:45 保持不变，仅更新 GUI 与控制台。
+
+Nikou 完整隔离测试退出码 0，构建及隐私扫描通过；受影响 Go 包定向测试及 vet 通过；Chromium/WebKit 原 Nikou 界面与新增工具页共 28 项通过，新增页最终复测 2 项通过。独立 Windows 隔离 Job 实测启动、重复启动 PID 不变、停止均通过。资源库 HST 定向回归通过。
+
+Magpie 全量 Go 测试未通过：internal/agent 的 TestAsideOfflineDisconnectRestoresWithoutDaemon 报 native fixture must report missing CLI，随后 TestClaudeCloudSwitchStepsAsideForMagpie 超时。全量任务已停止，日志保留在本机 artifacts/company/company-tools-go-tests.log；未将定向通过扩大为全量通过。全量 Nikou 首次伴随会话测试在并发负载下超时，定向及完整重跑通过。
+
 原手工预览构建跳过了 go-winres，安装 EXE 只有默认程序图标。现已补生成资源并重新安装。修复后分别从 EXE 及运行窗口的 WM_GETICON／窗口类读取到正确 Magpie 图标；安装器两个隔离自检通过。任务栏最终显示还受用户固定快捷方式缓存影响，不能仅靠托盘图标判断。
 
 预览构建改用 `company/scripts/build-preview-exe.ps1`，它先生成资源再编译。常规组合构建 `company/scripts/lib/build.mjs` 原本已包含资源生成。构建后仍须更新包摘要并通过安装器安装，不能手工覆盖正在使用的 EXE。
