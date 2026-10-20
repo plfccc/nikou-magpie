@@ -79,6 +79,9 @@ func TestCompanyUpstreamsReportsDifferenceAndUnknown(t *testing.T) {
 		Magpie struct {
 			Commit string `json:"commit"`
 		} `json:"magpie"`
+		Nikou struct {
+			Commit string `json:"commit"`
+		} `json:"nikou"`
 	}
 	if err := json.Unmarshal(company.UpstreamsLock, &locked); err != nil {
 		t.Fatal(err)
@@ -108,7 +111,7 @@ func TestCompanyUpstreamsReportsDifferenceAndUnknown(t *testing.T) {
 				if repo != "http://gitlab.inzwc.com/nikou/nikou-cli.git" || ref != "refs/heads/main" {
 					t.Fatal("GitLab 查询目标错误")
 				}
-				return "c1ebb2c55df0e8102ca028049f033e1a64fb41f1", nil
+				return locked.Nikou.Commit, nil
 			})
 			if calls != 1 || gitCalls != 1 || s.Items[1].State != "current" || len(s.Items) != 2 || s.Items[0].State != tc.want || s.CheckedAt == "" {
 				t.Fatalf("结果不符: %+v", s)

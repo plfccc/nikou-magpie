@@ -9,10 +9,14 @@ test('源码验证允许本地脏状态但证据禁止发布，正式用途拒�
   assert.equal(typeof module.verify, 'function', '必须实现分层验证入口');
   const w = await workspace(t); await writeFile(`${w.root}/dirty.txt`, '开发');
   assert.equal((await module.verify({ ...w, profile: 'source' })).exitCode, 10);
-  const run = o => o.file === 'git' ? w.run(o) : Promise.resolve({ exitCode: 0, stdout: '', stderr: '', timedOut: false });
+  const commands = [];
+  const run = o => { commands.push(o); return o.file === 'git' ? w.run(o) : Promise.resolve({ exitCode: 0, stdout: '', stderr: '', timedOut: false }); };
   const evidence = await module.verify({ ...w, run, profile: 'source', allowDirty: true, npmCli: `${w.dir}/npm-cli.js` });
   assert.equal(evidence.exitCode, 0, JSON.stringify(evidence)); assert.equal(evidence.releaseEligible, false); assert.equal(evidence.provenance.dirty, true);
   assert.ok(evidence.checks.some(c => c.status === 'not-run'));
+  const browserCommands = commands.filter(command => command.args.includes('internal/gui/tests/plugin-kernel.test.cjs'));
+  assert.equal(browserCommands.length, 2);
+  assert.ok(browserCommands.every(command => command.args.includes('--test-concurrency=1')));
 });
 
 test('产物验证必须运行两个专用自检，缺自检或ABI错拒绝签发可发布证据', async t => {
