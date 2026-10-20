@@ -60,7 +60,13 @@ export async function sandbox(base) {
   await mkdir(base, { recursive: true }); const dir = await mkdtemp(path.join(base, 'sandbox-'));
   for (const name of ['home', 'appdata', 'localappdata', 'tmp']) await mkdir(path.join(dir, name));
   const gitConfig = path.join(dir, 'gitconfig'); await writeFile(gitConfig, '');
-  return { dir, env: { ...process.env, HOME: path.join(dir, 'home'), USERPROFILE: path.join(dir, 'home'), APPDATA: path.join(dir, 'appdata'), LOCALAPPDATA: path.join(dir, 'localappdata'), TMP: path.join(dir, 'tmp'), TEMP: path.join(dir, 'tmp'), GIT_CONFIG_GLOBAL: gitConfig, GIT_CONFIG_NOSYSTEM: '1', GIT_TERMINAL_PROMPT: '0' } };
+  const env = { ...process.env, HOME: path.join(dir, 'home'), USERPROFILE: path.join(dir, 'home'), APPDATA: path.join(dir, 'appdata'), LOCALAPPDATA: path.join(dir, 'localappdata'), TMP: path.join(dir, 'tmp'), TEMP: path.join(dir, 'tmp'), GIT_CONFIG_GLOBAL: gitConfig, GIT_CONFIG_NOSYSTEM: '1', GIT_TERMINAL_PROMPT: '0' };
+  // 工具链缓存可复用，用户配置根和凭据环境不能继承到验收进程。
+  for (const key of Object.keys(env)) {
+    if (/(?:^|_)(?:API_KEY|TOKEN|SECRET|PASSWORD)$/i.test(key) || /^(?:CODEX|CLAUDE|KIRO|KIMI|GEMINI|GROK|HERMES|DSH|COPILOT|PI_CODING_AGENT|OMP|CODEBUDDY|NIKOU).*?(?:HOME|DIR|PATH)$/i.test(key)) delete env[key];
+  }
+  Object.assign(env, { XDG_CONFIG_HOME: path.join(dir, 'home', '.config'), XDG_DATA_HOME: path.join(dir, 'home', '.local', 'share'), XDG_CACHE_HOME: path.join(dir, 'home', '.cache'), CODEX_HOME: path.join(dir, 'home', '.codex'), CLAUDE_CONFIG_DIR: path.join(dir, 'home', '.claude') });
+  return { dir, env };
 }
 export async function command(ctx, checks, label, spec, env, required = true) {
   const result = await (ctx.run ?? runProcess)({ timeoutMs: 600_000, ...spec, env: { ...env, ...(spec.env ?? {}) } });

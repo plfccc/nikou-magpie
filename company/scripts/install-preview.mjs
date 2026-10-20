@@ -96,6 +96,9 @@ export async function installPreview(options = {}) {
   let activated = false;
   try {
     await lock.writeFile(JSON.stringify({ pid: process.pid, startedAt: new Date().toISOString() }));
+    const pointerPath = path.join(root, 'current.json');
+    await safeDirectory(root, pointerPath);
+    const previousPointer = await readFile(pointerPath, 'utf8').catch(error => { if (error.code === 'ENOENT') return null; throw error; });
     if (process.platform === 'win32' && !options.skipAcl) {
       await protectPreviewDirectory(root, run);
     }
@@ -161,7 +164,9 @@ export async function installPreview(options = {}) {
       await writeFile(script, '\uFEFF' + launcher(component), 'utf8');
     }
     await safeDirectory(root, path.join(root, 'current.json'));
-    await atomic(path.join(root, 'current.json'), { directory: receipt.directory, transactionId: id, developmentOnly: true, releaseEligible: false });
+    const currentPointer = await readFile(pointerPath, 'utf8').catch(error => { if (error.code === 'ENOENT') return null; throw error; });
+    if (currentPointer !== previousPointer) throw Error('激活前安装指针已被修改，保留当前选择');
+    await atomic(pointerPath, { directory: receipt.directory, transactionId: id, developmentOnly: true, releaseEligible: false });
     activated = true;
     return { ok: true, installRoot: root, releaseDirectory: release, receipt };
   } finally {

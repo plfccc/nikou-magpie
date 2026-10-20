@@ -107,4 +107,11 @@ test('完整暂存和隔离检查后才激活；后续依赖安装失败保留�
   assert.equal(JSON.parse(pointer).transactionId, installed.receipt.transactionId);
   await assert.rejects(installPreview({ infoFile: f.infoFile, installRoot: root, nikouDir, skipAcl: true, run: async () => ({ exitCode: 1, stderr: '模拟依赖安装失败' }) }), /依赖安装失败/);
   assert.equal(await readFile(path.join(root, 'current.json'), 'utf8'), pointer);
+  const manualPointer = JSON.stringify({ directory: 'releases/manual-rollback', transactionId: 'manual' });
+  await assert.rejects(installPreview({ infoFile: f.infoFile, installRoot: root, nikouDir, skipAcl: true, run: async spec => {
+    const reply = await run(spec);
+    if (spec.args[0] === 'nikou-self-check') await writeFile(path.join(root, 'current.json'), manualPointer);
+    return reply;
+  }}), /安装指针已被修改/);
+  assert.equal(await readFile(path.join(root, 'current.json'), 'utf8'), manualPointer);
 });

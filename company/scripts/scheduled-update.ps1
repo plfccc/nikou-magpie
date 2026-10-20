@@ -15,7 +15,7 @@ $held = $false
 $utf8 = New-Object Text.UTF8Encoding($false)
 try {
   try { $held = $mutex.WaitOne(0) } catch [Threading.AbandonedMutexException] { $held = $true }
-  if (-not $held) { throw '已有维护任务运行，跳过本轮' }
+  if (-not $held) { Write-Output '已有维护任务运行，跳过本轮'; return }
   Set-Location -LiteralPath $Root
   $env:GIT_TERMINAL_PROMPT = '0'
   $env:GCM_INTERACTIVE = 'Never'
