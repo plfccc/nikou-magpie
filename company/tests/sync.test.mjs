@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import path from 'node:path';
 import { workspace } from './fixtures/git/workspace.mjs';
 import { mkdir, access } from 'node:fs/promises';
 
@@ -58,8 +59,31 @@ test('合并冲突保留现场，人工修复后resume完成', async t => {
   assert.equal(conflict.exitCode, 12, JSON.stringify(conflict)); assert.deepEqual(conflict.conflicts.magpie, ['core.txt']);
   assert.ok((await w.readFile(`${conflict.worktrees.magpie}/core.txt`, 'utf8')).includes('<<<<<<<'));
   await w.writeFile(`${conflict.worktrees.magpie}/core.txt`, '人工解决\n'); w.git(conflict.worktrees.magpie, 'add', 'core.txt'); w.git(conflict.worktrees.magpie, 'commit', '-m', '解决冲突');
-  const resumed = await sync({ ...w, report, component: 'magpie', resume: true });
+  await w.writeFile(`${w.upstream}/later.txt`, '上游随后前进'); w.git(w.upstream, 'add', '.'); w.git(w.upstream, 'commit', '-m', '后续上游提交');
+  const now = Date.now;
+  let resumed;
+  try {
+    Date.now = () => now() + 25 * 3_600_000;
+    resumed = await sync({ ...w, report, component: 'magpie', resume: true });
+  } finally { Date.now = now; }
   assert.equal(resumed.exitCode, 0, JSON.stringify(resumed)); assert.equal(resumed.status, 'complete');
+  assert.equal(resumed.proposedLock.magpie.commit, report.upstreams.magpie.commit);
+});
+
+test('Nikou冲突期间人工修改Magpie拟定锁必须保留并拒绝恢复', async t => {
+  const { sync } = await import('../scripts/lib/sync.mjs');
+  const { checkUpstreams } = await import('../scripts/lib/report.mjs');
+  const w = await workspace(t);
+  await w.writeFile(`${w.nikouDir}/core.txt`, '公司Nikou修改'); w.git(w.nikouDir, 'add', '.'); w.git(w.nikouDir, 'commit', '-m', '公司修改');
+  await w.writeFile(`${w.upstream}/core.txt`, '上游修改'); w.git(w.upstream, 'add', '.'); w.git(w.upstream, 'commit', '-m', '上游修改');
+  const report = await checkUpstreams(w);
+  const conflict = await sync({ ...w, report, component: 'both' });
+  assert.equal(conflict.status, 'conflict');
+  const lockFile = path.join(conflict.worktrees.magpie, 'company/upstreams.lock.json');
+  const userLock = '人工锁修改'; await w.writeFile(lockFile, userLock);
+  await w.writeFile(`${conflict.worktrees.nikou}/core.txt`, '解决'); w.git(conflict.worktrees.nikou, 'add', '.'); w.git(conflict.worktrees.nikou, 'commit', '-m', '解决');
+  assert.equal((await sync({ ...w, report, component: 'both', resume: true })).exitCode, 10);
+  assert.equal(await w.readFile(lockFile, 'utf8'), userLock);
 });
 
 test('仅同步Nikou隔离仓库历史，原锁不变且拟定锁记录实际提交', async t => {

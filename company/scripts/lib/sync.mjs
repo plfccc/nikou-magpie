@@ -65,7 +65,11 @@ export async function sync(options = {}) {
     const component = options.component;
     if (!['magpie', 'nikou', 'both'].includes(component)) throw new IntegrationError(2, '必须选择magpie、nikou或both');
     if (lock.nikou.mode !== 'source' && component !== 'magpie') throw new IntegrationError(11, 'Nikou源码来源未验证');
-    validateReport(report, ctx);
+    // 摘要和目录身份先校验，只有持久化现场允许放宽报告时效。
+    validateReport(report, ctx, { allowExpired: Boolean(options.resume) });
+    const saved = options.resume ? await readState(path.join(await commonDir(root, run), 'company-integrations', `${report.reportId}-${component}.json`)) : null;
+    if (options.resume && (!saved || saved.summarySha256 !== report?.summarySha256)) throw new IntegrationError(2, '恢复必须使用已保存且摘要一致的候选报告');
+    validateReport(report, ctx, { allowExpired: Boolean(saved) });
     const selected = component === 'both' ? ['magpie', 'nikou'] : [component];
     const lockedUpstreams = { magpie: lock.magpie.commit, nikou: lock.nikou.commit };
     const candidateUpstreams = Object.fromEntries(selected.map(c => [c, report.upstreams?.[c]?.commit]));
@@ -76,7 +80,7 @@ export async function sync(options = {}) {
       const source = allowedSource(policy, c, u.repository);
       if (u.lockedCommit !== lock[c].commit || u.workspace !== workspace || u.ref !== source.channels?.[report.channel] || u.baseCommit !== await head(workspace, run)) throw new IntegrationError(2, `${c}来源或公司base已变化，请重新查询`);
       if (c === 'nikou' && await dirty(workspace, run)) throw new IntegrationError(10, 'Nikou公司工作树存在未提交改动');
-      if (await resolveRemote(root, u.repository, u.ref, run) !== u.commit) throw new IntegrationError(2, `${c}候选引用已移动，请重新查询`);
+      if (!saved && await resolveRemote(root, u.repository, u.ref, run) !== u.commit) throw new IntegrationError(2, `${c}候选引用已移动，请重新查询`);
     }
     const integrationId = `${report.reportId}-${component}`;
     const common = { magpie: await commonDir(root, run) };
@@ -111,7 +115,7 @@ export async function sync(options = {}) {
       if (state.completed[c]) {
         if (await head(worktrees[c], run) !== state.completed[c]) throw new IntegrationError(2, `${c}已完成候选HEAD发生变化，保留现场`);
         const status = await git(worktrees[c], ['status', '--porcelain'], run);
-        if (status && (c !== 'magpie' || status.split('\n').some(line => line.slice(3) !== 'company/upstreams.lock.json'))) throw new IntegrationError(10, `${c}候选工作树存在用户修改`);
+        if (status && (state.status !== 'complete' || c !== 'magpie' || status.split('\n').some(line => line.slice(3) !== 'company/upstreams.lock.json'))) throw new IntegrationError(10, `${c}候选工作树存在用户修改`);
         if (state.status === 'complete' && c === 'magpie' && digest(await readFile(path.join(worktrees.magpie, 'company/upstreams.lock.json'))) !== state.proposedLockSha256) throw new IntegrationError(15, '拟定锁被修改，保留现场');
         continue;
       }

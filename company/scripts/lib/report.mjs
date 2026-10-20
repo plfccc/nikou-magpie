@@ -13,10 +13,10 @@ export function sealReport(report) {
   const summary = digest(canonical(body));
   return { ...body, reportId: summary.slice(0, 24), summarySha256: summary };
 }
-export function validateReport(report, ctx) {
+export function validateReport(report, ctx, { allowExpired = false } = {}) {
   if (!report || report.schemaVersion !== 1 || !/^[a-f0-9]{24}$/.test(report.reportId ?? '') || sealReport(report).summarySha256 !== report.summarySha256 || report.reportId !== report.summarySha256.slice(0, 24)) throw new IntegrationError(2, '候选报告摘要不符，请重新查询');
   const age = Date.now() - Date.parse(report.createdAt);
-  if (!Number.isFinite(age) || age < -60_000 || age > (ctx.policy.reportMaxAgeHours ?? 24) * 3_600_000) throw new IntegrationError(2, '候选报告已过期，请重新查询');
+  if (!Number.isFinite(age) || age < -60_000 || (!allowExpired && age > (ctx.policy.reportMaxAgeHours ?? 24) * 3_600_000)) throw new IntegrationError(2, '候选报告已过期，请重新查询');
   if (report.lockSha256 !== digest(ctx.lockBytes) || report.policySha256 !== digest(ctx.policyBytes) || report.root !== ctx.root) throw new IntegrationError(2, '候选报告的锁、策略或工作区已变化');
 }
 export async function writeReport(file, report) {
