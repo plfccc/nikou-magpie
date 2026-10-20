@@ -8,7 +8,7 @@ import { sandbox } from '../scripts/lib/evidence.mjs';
 test('隔离覆盖自定义配置根并不继承 API 密钥', async t => {
   const root = await mkdtemp(path.join(os.tmpdir(), 'maintenance-sandbox-'));
   t.after(() => rm(root, { recursive: true, force: true }));
-  const keys = ['CODEX_HOME', 'CLAUDE_CONFIG_DIR', 'XDG_CONFIG_HOME', 'OPENAI_API_KEY', 'GH_TOKEN'];
+  const keys = ['CODEX_HOME', 'CLAUDE_CONFIG_DIR', 'XDG_CONFIG_HOME', 'OPENAI_API_KEY', 'GH_TOKEN', 'QODER_CONFIG_DIR', 'OPENCODE_DB', 'XDG_STATE_HOME'];
   const before = Object.fromEntries(keys.map(key => [key, process.env[key]]));
   t.after(() => {
     for (const key of keys) {
@@ -22,4 +22,7 @@ test('隔离覆盖自定义配置根并不继承 API 密钥', async t => {
   assert.ok(isolated.env.XDG_CONFIG_HOME.startsWith(isolated.dir));
   assert.equal(isolated.env.OPENAI_API_KEY, undefined);
   assert.equal(isolated.env.GH_TOKEN, undefined);
+  assert.equal(isolated.env.QODER_CONFIG_DIR, undefined);
+  assert.equal(isolated.env.OPENCODE_DB, undefined);
+  assert.ok(isolated.env.XDG_STATE_HOME.startsWith(isolated.dir));
 });
