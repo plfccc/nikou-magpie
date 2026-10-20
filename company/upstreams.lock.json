@@ -11,7 +11,7 @@
                   "version":  "0.1.89",
                   "repository":  "http://gitlab.inzwc.com/nikou/nikou-cli.git",
                   "commit":  "c1ebb2c55df0e8102ca028049f033e1a64fb41f1",
-                  "effectiveCommit":  "2965e8ef9386bea55c3adbf9b70cfcc5397827ba",
+                  "effectiveCommit":  "0277dfc7c46a5c4f41b8e0fd7b1d65d257f9ed60",
                   "sourceVerified":  true,
                   "dependencyLock":  {
                                          "path":  "package-lock.json",
