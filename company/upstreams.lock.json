@@ -1,21 +1,21 @@
 {
-    "schemaVersion":  1,
-    "bridgeProtocol":  1,
-    "magpie":  {
-                   "repository":  "https://github.com/yetone/magpie.git",
-                   "commit":  "865b61808690bc9fd716257949414ec97618a5a5"
-               },
-    "nikou":  {
-                  "mode":  "source",
-                  "package":  "nikou-cli",
-                  "version":  "0.1.89",
-                  "repository":  "http://gitlab.inzwc.com/nikou/nikou-cli.git",
-                  "commit":  "c1ebb2c55df0e8102ca028049f033e1a64fb41f1",
-                  "effectiveCommit":  "e379f7be84a82bf831378b4828d78069e451df00",
-                  "sourceVerified":  true,
-                  "dependencyLock":  {
-                                         "path":  "package-lock.json",
-                                         "sha256":  "97f6bc31468b5fa4ba8bedf250f8433a81e040058b78118c1aa5fac2d6cd074c"
-                                     }
-              }
+  "schemaVersion": 1,
+  "bridgeProtocol": 1,
+  "magpie": {
+    "repository": "https://github.com/yetone/magpie.git",
+    "commit": "2374ffe161439b02a8e7f23b793461b39a635bf8"
+  },
+  "nikou": {
+    "mode": "source",
+    "package": "nikou-cli",
+    "version": "0.1.90",
+    "repository": "http://gitlab.inzwc.com/nikou/nikou-cli.git",
+    "commit": "0f406019b7139d165f3686350a0a1b16c6380bdf",
+      "effectiveCommit": "f3c59bbb74d790fc031f5a178a00a21ce209e029",
+    "sourceVerified": true,
+    "dependencyLock": {
+      "path": "package-lock.json",
+      "sha256": "441a038e359cf21856add63420fdf94bbb137a8a0f3d34addc800f6234f927a2"
+    }
+  }
 }
