@@ -11,3 +11,5 @@ Windows 任务 `NikouMagpie-UpstreamMaintenance` 每天北京时间 09:00 执行
 用户在与妮蔻的单聊回复后，由维护会话读取本轮结果、核对候选 SHA 与选项，再继续验证；调度器不会监听任意聊天并直接批准。可以运行 `node company/scripts/maintenance-notify.mjs <maintenance目录>` 重试最近通知。
 
 本轮修复包括 Windows 临时目录长短路径比较，以及 worktree 下通过 NIKOU_TEST_SOURCE_DIR 显式传入候选 Nikou 的依赖来源。所有必需测试仍保留。
+
+维护 AI 使用 Magpie provider 和完整模型 ID `group/auto-gpt-6-1-sol`，可用 NIKOU_MAINTENANCE_MODEL 指定另一已配置的网关模型，避免裸模型名称走 Codex 内置 OpenAI 登录通道。模型连接中断会保留候选和日志并通知，不标记安装成功。
