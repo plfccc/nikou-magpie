@@ -26,6 +26,14 @@
 .nikou-company > .nikou-tools { justify-content: space-between; margin-bottom: 8px; }
 .nikou-company > .nikou-tools h3 { margin: 0; }
 .nikou-note:empty { display: none; }
+.nikou-company > [role="status"][data-state] { padding: 10px 12px; margin: 12px 0; border-radius: 7px; background: var(--pill); color: var(--fg); border: 1px solid var(--line); }
+.nikou-company > [role="status"][data-state="success"] { color: var(--green); }
+.nikou-company > [role="status"][data-state="error"] { color: var(--red); }
+.nikou-company-row[aria-busy="true"] { background: var(--pill); border-radius: 7px; padding: 12px; }
+#view-nikou button[aria-busy="true"]:disabled { opacity: 1; color: var(--fg); }
+.nikou-company button[aria-busy="true"]::before, .nikou-company > [role="status"][data-state="running"]::before { content: ""; display: inline-block; width: 12px; height: 12px; margin-right: 7px; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; vertical-align: -2px; animation: nikou-company-spin .8s linear infinite; }
+@keyframes nikou-company-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .nikou-company button[aria-busy="true"]::before, .nikou-company > [role="status"][data-state="running"]::before { animation: none; } }
 .pop.proto-menu.nikou-menu { width: 240px; min-width: 180px; max-width: calc(100vw - 16px); }
 .nikou-fields .pick > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .nikou-error { color: var(--red); font-size: 12px; white-space: pre-wrap; overflow-wrap: anywhere; margin: 12px 0; }

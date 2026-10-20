@@ -28,13 +28,34 @@ window.mountNikouCompany = (root, ui) => {
     if (busy || !window.confirm(question)) return;
     setBusy(true);
     const requestId = crypto.randomUUID();
-    message.textContent = "正在处理，请勿重复操作…";
+    const row = values.tool ? [...toolBody.children].find(node => node.dataset.tool === values.tool) : null;
+    const toolName = values.tool === "hst-mcp" ? "华盛通 MCP" : "Nikou 本地工具";
+    const actionName = values.action === "update" ? "检查并升级" : "初始化配置";
+    const activeButton = row?.querySelectorAll("button")[values.action === "update" ? 0 : 1];
+    const originalTitle = activeButton?.textContent;
+    const started = Date.now();
+    let phase = row ? `正在${actionName} ${toolName}` : "正在提交操作";
+    const showProgress = () => {
+      if (disposed) return;
+      message.textContent = `${phase} · 已等待 ${Math.floor((Date.now() - started) / 1000)} 秒。请勿关闭应用。`;
+    };
+    message.dataset.state = "running";
+    tools.setAttribute("aria-busy", "true");
+    row?.setAttribute("aria-busy", "true");
+    if (activeButton) {
+      activeButton.textContent = values.action === "update" ? "正在升级…" : "正在初始化…";
+      activeButton.setAttribute("aria-busy", "true");
+    }
+    showProgress();
+    const progressTimer = setInterval(showProgress, 1000);
     try {
       const instance = (await api("hello")).instanceId;
       let result;
       try { result = await api(route, { ...values, requestId, confirmed: true }); }
       catch (error) {
         if (error.code && error.code !== "OPERATION_UNKNOWN") throw error;
+        phase = row ? `${toolName} 仍在处理，正在等待执行回执` : "正在等待执行回执";
+        showProgress();
         // 升级可能超过单次桥接时限，继续查原回执，绝不重发安装或 Job 执行。
         for (let i = 0; i < 600 && !disposed; i++) {
           await new Promise(resolve => setTimeout(resolve, 1000));
@@ -45,11 +66,23 @@ window.mountNikouCompany = (root, ui) => {
         }
         if (!result) throw Error("操作仍未确认，请稍后检查实际版本或任务状态");
       }
+      clearInterval(progressTimer);
+      message.dataset.state = "success";
       message.textContent = result.accepted ? "已提交执行，请刷新查看结果。" : result.terminalOpened ? "初始化终端已打开，完成后请刷新状态。" : result.resourceLibrarySyncRequired
-        ? "MCP 配置已初始化；客户端分发由资源库统一管理，请在资源库核对华盛通 MCP 的分配。" : "操作已完成。";
+        ? "MCP 配置已初始化；客户端分发由资源库统一管理，请在资源库核对华盛通 MCP 的分配。" : row ? `${toolName} 操作已完成。` : "操作已完成。";
       await refresh();
-    } catch (error) { message.textContent = error.message; }
-    finally { if (!disposed) setBusy(false); }
+    } catch (error) {
+      clearInterval(progressTimer);
+      message.dataset.state = "error";
+      message.textContent = `操作未完成：${error.message}`;
+    }
+    finally {
+      clearInterval(progressTimer);
+      row?.removeAttribute("aria-busy");
+      tools.removeAttribute("aria-busy");
+      if (activeButton) { activeButton.textContent = originalTitle; activeButton.removeAttribute("aria-busy"); }
+      if (!disposed) setBusy(false);
+    }
   }
   const label = { "not-checked": "尚未检测", "not-installed": "未安装", "update-available": "有更新", "local-newer": "本机版本较新", current: "已是最新", unknown: "检查失败" };
   const initialized = { ready: "已初始化", missing: "未初始化", incomplete: "配置待补齐" };

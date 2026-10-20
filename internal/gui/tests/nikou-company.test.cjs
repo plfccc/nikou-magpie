@@ -37,7 +37,12 @@ for (const [name, engine] of [['chromium', chromium], ['webkit', webkit]]) {
     assert.equal(await page.locator('img').count(), 0);
     page.once('dialog', dialog => dialog.accept());
     await page.locator('[data-tool="hst-mcp"]').getByRole('button', { name: '检查并升级' }).click();
+    await page.locator('[data-tool="hst-mcp"][aria-busy="true"]').waitFor();
+    assert.equal(await page.getByRole('button', { name: '正在升级…' }).isDisabled(), true);
+    assert.match(await page.getByRole('status').innerText(), /华盛通 MCP.*已等待/);
     await page.getByRole('status').filter({ hasText: '操作已完成' }).waitFor();
+    assert.equal(await page.getByRole('status').getAttribute('data-state'), 'success');
+    assert.equal(await page.locator('[data-tool="hst-mcp"][aria-busy="true"]').count(), 0);
     assert.equal(writes.length, 1);
     assert.equal(writes[0].body.confirmed, true);
     assert.deepEqual(errors, []);
