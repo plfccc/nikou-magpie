@@ -81,6 +81,10 @@ for (const engine of process.env.BROWSER ? [process.env.BROWSER] : ["chromium", 
     t.after(() => f.context.close());
     await f.view.getByRole("heading", { name: "公司工具", exact: true }).waitFor();
     await f.view.getByRole("heading", { name: "Nikou Job", exact: true }).waitFor();
+    const model = await f.view.locator('[data-model="p2p"]').boundingBox();
+    const effort = await f.view.locator('[data-effort="p2p"]').boundingBox();
+    assert.ok(Math.abs(model.y - effort.y) < 2, "模型与思考档位顶部对齐");
+    assert.ok(await f.view.evaluate(el => el.scrollWidth <= el.clientWidth), "窄窗口不产生横向滚动");
     assert.deepEqual(f.errors, []);
   });
   test(`${engine}: Nikou 菜单关闭、重绘清理和定位`, async t => {

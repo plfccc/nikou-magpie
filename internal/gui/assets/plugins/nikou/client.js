@@ -338,7 +338,7 @@
         action: key, engine: current().engine, model: current().launchProfile?.model || "", effort: current().launchProfile?.effort || "",
       }));
       for (const [key, label] of [["p2p", "单聊"], ["group", "群聊"]]) {
-        const section = ui.el("section");
+        const section = ui.el("section", "nikou-scope");
         section.append(text("h3", "", label));
         const fields = ui.el("div", "nikou-fields");
         for (const [field, title] of [["model", "模型"], ["effort", "思考档位"]]) {
@@ -348,6 +348,7 @@
           fields.append(wrap);
         }
         const button = ui.button(words("保存") + words(label), () => save(key));
+        button.classList.add("primary");
         button.dataset.action = "save-" + key;
         fields.append(button);
         const saved = ui.el("p", "nikou-note");

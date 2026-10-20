@@ -51,3 +51,5 @@ Nikou 内置页增加公司工具及 Job 卡片，调用固定桥接路由 `comp
 `node company/scripts/check-contract.mjs <Nikou源码绝对路径>` 构建 Go 探针并启动隔离用户目录中的 Nikou 产物控制台，只验证 hello/status，不启动 Worker。`internal/gui/tests/nikou.test.cjs` 在 Chromium/WebKit 验证交互、错误处理、实例变化与轮询暂停。
 
 公司工具脚本必须在实际 index.html 中先于 Nikou client 加载；Manifest 声明不会自动注入静态入口。TestBuiltinClientsLoaded 检查资源加载，nikou.test.cjs 使用真实入口在双浏览器断言两张卡片，防止孤立组件测试掩盖入口遗漏。
+
+Nikou 页面复用原生 list、pick、text primary 与主题变量：内容限宽，模型与思考档位按列对齐，窄屏保存按钮独占一行；公司工具状态与操作分列显示。双浏览器入口测试同时检查选择器对齐与横向溢出。
