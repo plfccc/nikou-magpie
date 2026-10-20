@@ -12,7 +12,7 @@
 
 ## 写操作与失败
 
-写操作必须带 requestId；相同 ID 与内容返回原结果，不自动重放。Nikou 控制台回执保留24小时；进程重启时残留 running 转为 unknown。magpie 的跨进程账号回执位于配置目录 `nikou-bridge-operations.json`，使用文件锁和原子写入；确认结果保留24小时，未确认 pending 不自动过期。锁失败拒绝执行；损坏回执保持未知，不按空记录重新执行。
+写操作必须带 requestId；相同 ID 与内容返回原结果，不自动重放。Nikou 控制台成功与明确失败回执保留24小时，running/unknown 不自动过期；进程重启时残留 running 转为 unknown。Job 写请求传输失败或回执损坏同样返回 unknown，不视为未执行。magpie 的跨进程账号回执位于配置目录 `nikou-bridge-operations.json`，使用文件锁和原子写入；确认结果保留24小时，未确认 pending 不自动过期。锁失败拒绝执行；损坏回执保持未知，不按空记录重新执行。
 
 普通读、写、额度刷新分别限时5、15、60秒。写响应不可信或超时后显示 `OPERATION_UNKNOWN`；页面查询回执并刷新真实状态，不重发写请求。页面记录 hello 的 instanceId，实例变化时不沿用旧回执宣称成功。成功保存模型配置不代表运行中的 Worker 已使用它。
 
@@ -59,3 +59,5 @@ Nikou 普通操作按钮使用原生会话继续按钮相同的 pill/pill-hover 
 ### Nikou 独立资源目标
 
 Nikou 注册为资源库目标，指令、MCP 和技能写入 ~/.nikou-block/library/，不复用或覆盖 Codex/Kiro 的全局配置。Worker 每轮任务合并该目录的指令与技能索引，并传递 MCP 至执行引擎；群关联同名 MCP 优先。Kiro/Kimi 使用 ACP session/new/load，Claude 使用私有配置文件，Codex 使用现有配置参数且拒绝带凭据的独立 MCP，其他引擎配置了 MCP 时明确拒绝执行。解析失败中止任务，禁止静默忽略。正在运行的旧 Worker 必须升级重启后才能消费此目录。资源库取消分配只撤回自己写入的项，保留用户配置。
+
+独立 MCP 中的 `${VAR}` 引用在任务创建时从进程环境展开，缺失变量明确报错且不输出变量值。Codex 将 Claude 格式的 `headers` 转为 `http_headers` 后按原规则检查凭据；含凭据配置仍禁止通过命令行传递。
