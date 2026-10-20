@@ -17,7 +17,7 @@ import (
 
 // NikouAssetsCheck 供无副作用自检使用，仅检查嵌入资源。
 func NikouAssetsCheck() error {
-	for _, file := range []string{"assets/plugins/nikou/client.js", "assets/plugins/nikou/nikou.css"} {
+	for _, file := range []string{"assets/plugins/nikou/company.js", "assets/plugins/nikou/client.js", "assets/plugins/nikou/nikou.css"} {
 		if b, err := assets.ReadFile(file); err != nil || len(b) == 0 {
 			return errors.New("Nikou 内置页面资源缺失")
 		}

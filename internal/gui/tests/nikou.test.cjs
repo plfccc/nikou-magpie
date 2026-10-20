@@ -74,6 +74,15 @@ async function fixture(browser, lang = "zh", width = 420, options = {}) {
 }
 
 for (const engine of process.env.BROWSER ? [process.env.BROWSER] : ["chromium", "webkit"]) {
+  test(`${engine}: 实际页面入口加载公司工具与 Job`, async t => {
+    const browser = await (engine === "webkit" ? webkit.launch() : chromium.launch({ channel: "chromium" }));
+    t.after(() => browser.close());
+    const f = await fixture(browser);
+    t.after(() => f.context.close());
+    await f.view.getByRole("heading", { name: "公司工具", exact: true }).waitFor();
+    await f.view.getByRole("heading", { name: "Nikou Job", exact: true }).waitFor();
+    assert.deepEqual(f.errors, []);
+  });
   test(`${engine}: Nikou 菜单关闭、重绘清理和定位`, async t => {
     const browser = await (engine === "webkit" ? webkit.launch() : chromium.launch({ channel: "chromium" }));
     t.after(() => browser.close());
