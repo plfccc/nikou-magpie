@@ -19,8 +19,12 @@ for (const [name, engine] of Object.entries({ chromium, webkit })) {
         { name: "magpie", baseline: "a".repeat(40), latest: "b".repeat(40), state: "changed" },
         { name: "nikou", baseline: "c".repeat(40), state: "unknown", error: "上游返回 HTTP 401，可能需要仓库访问权限" },
       ] } };
+      fixture.upstreams.maintenance = {status:'blocked',summary:'接口兼容存在两种方案，请确认保留旧行为还是迁移',completedAt:'2026-10-20T09:00:00+08:00',notification:{status:'sent'}};
       await page.evaluate(data => renderCompanyUpstreams(document.querySelector(".row"), data), fixture);
       assert.match(await page.locator(".cu-list").innerText(), /有更新/);
+      assert.match(await page.locator('.cu-maintenance').innerText(), /等待你确认/);
+      assert.match(await page.locator('.cu-maintenance').innerText(), /飞书通知已发送/);
+      assert.match(await page.locator('.cu-maintenance').innerText(), /接口兼容/);
       assert.match(await page.locator(".cu-list").innerText(), /检查失败/);
       assert.match(await page.locator(".cu-version").innerText(), /1.0.0-dev.1 · Nikou 0.1.89/);
       assert.equal(await page.locator("details").getAttribute("open"), null);

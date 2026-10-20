@@ -1,4 +1,4 @@
-import { cp, lstat, mkdir, mkdtemp, readFile, readdir, writeFile } from 'node:fs/promises';
+import { cp, lstat, mkdir, mkdtemp, readFile, readdir, realpath, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { loadContext, digest, allowedSource, IntegrationError } from './lock.mjs';
 import { canonical } from './report.mjs';
@@ -28,8 +28,8 @@ export async function sourceContext(options, { allowDirty = false, exact = true 
   let nikouSha;
   try { nikouSha = await head(ctx.nikouDir, ctx.run); } catch { throw new IntegrationError(11, 'Nikou源码不可访问'); }
   for (const [directory, upstream] of [[ctx.root, ctx.lock.magpie.commit], [ctx.nikouDir, ctx.lock.nikou.commit]]) {
-    const top = path.resolve(await git(directory, ['rev-parse', '--show-toplevel'], ctx.run));
-    if (top !== directory) throw new IntegrationError(11, '构建必须使用独立Git仓库根目录');
+    const top = await realpath(path.resolve(await git(directory, ['rev-parse', '--show-toplevel'], ctx.run)));
+    if (top !== await realpath(directory)) throw new IntegrationError(11, '构建必须使用独立Git仓库根目录');
     const ancestor = await git(directory, ['merge-base', '--is-ancestor', upstream, 'HEAD'], ctx.run, { allowFailure: true });
     if (ancestor.exitCode !== 0) throw new IntegrationError(11, '源码不包含锁定的上游提交');
   }

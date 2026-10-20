@@ -35,8 +35,9 @@ async function sourceVerify(options, checks) {
       ['Go本机构建', { file: 'go', args: ['build', '-o', path.join(isolated.dir, 'magpie-native.exe'), '.'], cwd: ctx.root }],
       ['Go Linux nogui构建', { file: 'go', args: ['build', '-tags', 'nogui', '-o', path.join(isolated.dir, 'magpie-linux'), '.'], cwd: ctx.root, env: { GOOS: 'linux', CGO_ENABLED: '0' } }],
       ['Go Windows构建', { file: 'go', args: ['build', '-o', path.join(isolated.dir, 'magpie-windows.exe'), '.'], cwd: ctx.root, env: { GOOS: 'windows', CGO_ENABLED: '0' } }],
-      ['Nikou聚焦测试', npm(ctx, ['exec', '--', 'tsx', '--test', 'test/magpie-integration.test.ts', 'test/magpie-console-server.test.ts', 'test/magpie-account-menu.test.ts', 'test/magpie-account-backend.test.ts'], ctx.nikouDir)],
       ['Nikou完整构建', npm(ctx, ['run', 'build'], ctx.nikouDir)],
+      ['Nikou完整测试', npm(ctx, ['test'], ctx.nikouDir)],
+      ['Nikou聚焦测试', npm(ctx, ['exec', '--', 'tsx', '--test', 'test/magpie-integration.test.ts', 'test/magpie-console-server.test.ts', 'test/magpie-account-menu.test.ts', 'test/magpie-account-backend.test.ts'], ctx.nikouDir)],
       ['Go与Nikou真实契约', { file: process.execPath, args: ['company/scripts/check-contract.mjs', ctx.nikouDir], cwd: ctx.root }],
       ['Nikou隐私检查', npm(ctx, ['run', 'privacy-scan'], ctx.nikouDir)],
       ['Nikou包清单检查', npm(ctx, ['run', 'pack:check'], ctx.nikouDir)]

@@ -22,6 +22,7 @@ try {
   $env:GOROOT = 'D:\project\hst\nikou\.tools\go1.26.8\go'
   $env:PATH = (Join-Path $env:GOROOT 'bin') + ';' + $env:PATH
   $env:NODE_PATH = 'C:\Users\lingpfeng.peng\.agents\skills\playwright-skill\node_modules'
+  $env:NIKOU_TEST_SOURCE_DIR = $NikouRoot
   $node = (Get-Command node.exe -ErrorAction Stop).Source
   $git = (Get-Command git.exe -ErrorAction Stop).Source
   $codex = Join-Path $env:APPDATA 'npm\node_modules\@openai\codex\bin\codex.js'
@@ -44,23 +45,29 @@ try {
     $instructions += "`n将详细结果写入本次日志目录 result.md；最终严格按 JSON Schema 输出状态、中文摘要和证据文件绝对路径。`n"
     # 由 Node 直接传递 UTF-8 字节，避免 PowerShell 管道把中文指令转换成问号。
     [IO.File]::WriteAllText((Join-Path $logRoot 'instructions.md'), $instructions, $utf8)
+    [IO.File]::WriteAllText((Join-Path $stateRoot 'latest.json'), (@{status='running'; startedAt=(Get-Date).ToString('o'); summary='AI 正在集成上游并执行验证'; logDirectory=$logRoot} | ConvertTo-Json), $utf8)
     & $node (Join-Path $Root 'company\scripts\run-maintenance-agent.mjs') $Root $logRoot $codex
     $agentExit = $LASTEXITCODE
     if ($agentExit -ne 0) { throw '自动维护失败，详见本次 codex.log；未将失败标记为成功' }
     $reply = Get-Content -Raw -Encoding utf8 $output | ConvertFrom-Json
-    if ($reply.status -notin @('installed', 'up-to-date')) { throw "维护未完成：$($reply.status)：$($reply.summary)；详见 $output" }
+    if ($reply.status -notin @('installed', 'up-to-date', 'blocked', 'failed', 'awaiting-maintenance-window')) { throw '维护执行器返回未知状态' }
     if (-not (Test-Path -LiteralPath $reply.evidenceFile -PathType Leaf)) { throw '维护执行器没有生成证据文件' }
     $result = @{ status = $reply.status; summary = $reply.summary; result = $output; report = $reportPath; evidence = $reply.evidenceFile }
   }
   $result.completedAt = (Get-Date).ToString('o')
   [IO.File]::WriteAllText((Join-Path $stateRoot 'latest.json'), ($result | ConvertTo-Json -Depth 10), $utf8)
   $result | ConvertTo-Json
+  if ($result.status -in @('failed', 'blocked', 'awaiting-maintenance-window')) { exit 1 }
 } catch {
   $result = @{ status = 'failed'; message = $_.Exception.Message; logDirectory = $logRoot; completedAt = (Get-Date).ToString('o') }
   [IO.File]::WriteAllText((Join-Path $stateRoot 'latest.json'), ($result | ConvertTo-Json), $utf8)
   Write-Error $_
   exit 1
 } finally {
+  if ($held -and -not $CheckOnly -and $node) {
+    & $node (Join-Path $Root 'company\scripts\maintenance-notify.mjs') $stateRoot
+    if ($LASTEXITCODE -ne 0) { Write-Warning '本轮维护结果已保存，但飞书通知未送达' }
+  }
   if ($held) { $mutex.ReleaseMutex() }
   $mutex.Dispose()
 }

@@ -10,6 +10,7 @@ import (
 	"net/url"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 	"sync"
 	"time"
@@ -28,10 +29,11 @@ type upstreamItem struct {
 	Error      string `json:"error,omitempty"`
 }
 type upstreamStatus struct {
-	NikouVersion string         `json:"nikouVersion,omitempty"`
-	Checking     bool           `json:"checking"`
-	CheckedAt    string         `json:"checkedAt,omitempty"`
-	Items        []upstreamItem `json:"items"`
+	Maintenance  map[string]interface{} `json:"maintenance,omitempty"`
+	NikouVersion string                 `json:"nikouVersion,omitempty"`
+	Checking     bool                   `json:"checking"`
+	CheckedAt    string                 `json:"checkedAt,omitempty"`
+	Items        []upstreamItem         `json:"items"`
 }
 type upstreamChecker struct {
 	mu     sync.Mutex
@@ -53,6 +55,17 @@ func (c *upstreamChecker) snapshot() upstreamStatus {
 		s.NikouVersion = lock.Nikou.Version
 	}
 	s.Items = append([]upstreamItem(nil), s.Items...)
+	if base := os.Getenv("LOCALAPPDATA"); base != "" {
+		if data, err := os.ReadFile(filepath.Join(base, "NikouMagpie", "maintenance", "latest.json")); err == nil && len(data) < 65536 {
+			var latest map[string]interface{}
+			if json.Unmarshal(data, &latest) == nil {
+				s.Maintenance = make(map[string]interface{})
+				for _, key := range []string{"status", "summary", "message", "completedAt", "startedAt", "notification"} {
+					s.Maintenance[key] = latest[key]
+				}
+			}
+		}
+	}
 	return s
 }
 

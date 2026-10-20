@@ -3,6 +3,7 @@
 .company-version > .val { display: none; }
 .company-version .sub { width: 100%; white-space: normal; overflow: visible; }
 .cu-version { color: var(--fg); margin: 6px 0 14px; font-size: 13px; }
+.cu-maintenance { margin-top: 12px; padding: 12px; background: var(--pill); border-radius: 9px; color: var(--fg); white-space: pre-wrap; overflow-wrap: anywhere; }
 .cu-list { border: 1px solid var(--line); border-radius: 9px; overflow: hidden; }
 .cu-entry { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 8px 16px; padding: 12px; }
 .cu-entry + .cu-entry { border-top: 1px solid var(--line); }

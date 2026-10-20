@@ -24,6 +24,17 @@ function renderCompanyUpstreams(row, result) {
     list.append(entry);
   }
   sub.append(list);
+  const maintenance = status.maintenance;
+  if (maintenance) {
+    const state = { running: "正在集成验证", installed: "安装完成", "up-to-date": "已是最新", failed: "更新失败", blocked: "等待你确认", "awaiting-maintenance-window": "等待维护窗口" }[maintenance.status] || "等待处理";
+    const block = el("div", "cu-maintenance");
+    block.append(el("strong", "", `自动维护（每天北京时间 09:00）：${state}`));
+    block.append(el("p", "cu-hint", maintenance.summary || maintenance.message || ""));
+    const date = maintenance.completedAt || maintenance.startedAt;
+    if (date) block.append(el("div", "cu-time", `最近执行：${new Date(date).toLocaleString()}`));
+    if (maintenance.notification) block.append(el("div", "cu-time", maintenance.notification.status === "sent" ? "飞书通知已发送" : "飞书通知未送达，请检查通知配置"));
+    sub.append(block);
+  }
   if (items.some(item => item.state === "changed")) sub.append(el("p", "cu-hint", "上游有新提交，需要集成验证后发布公司版。"));
   const controls = el("div", "cu-controls");
   const check = el("button", "text", status.checking ? "正在检查…" : "立即检查");
