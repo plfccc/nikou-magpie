@@ -25,6 +25,11 @@ for (const [name, engine] of Object.entries({ chromium, webkit })) {
       assert.match(await page.locator('.cu-maintenance').innerText(), /等待你确认/);
       assert.match(await page.locator('.cu-maintenance').innerText(), /飞书通知已发送/);
       assert.match(await page.locator('.cu-maintenance').innerText(), /接口兼容/);
+      fixture.upstreams.maintenance = { status: 'running', progress: { stage: 'Nikou完整测试', status: 'running', completedChecks: 12 }, heartbeat: { updatedAt: '2026-10-20T09:01:00+08:00' } };
+      await page.evaluate(data => renderCompanyUpstreams(document.querySelector('.row'), data), fixture);
+      assert.match(await page.locator('.cu-maintenance').innerText(), /Nikou完整测试/);
+      assert.match(await page.locator('.cu-maintenance').innerText(), /已完成 12 项检查/);
+      assert.match(await page.locator('.cu-maintenance').innerText(), /执行器心跳/);
       assert.match(await page.locator(".cu-list").innerText(), /检查失败/);
       assert.match(await page.locator(".cu-version").innerText(), /1.0.0-dev.1 · Nikou 0.1.89/);
       assert.equal(await page.locator("details").getAttribute("open"), null);

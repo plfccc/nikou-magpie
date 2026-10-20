@@ -30,6 +30,12 @@ function renderCompanyUpstreams(row, result) {
     const block = el("div", "cu-maintenance");
     block.append(el("strong", "", `自动维护（每天北京时间 09:00）：${state}`));
     block.append(el("p", "cu-hint", maintenance.summary || maintenance.message || ""));
+    if (maintenance.status === "running") {
+      const progress = maintenance.progress;
+      if (progress?.stage) block.append(el("p", "cu-hint", `当前步骤：${progress.stage}（${progress.status === "fail" ? "失败，等待处理" : progress.status === "pass" ? "已通过" : "执行中"}）；已完成 ${progress.completedChecks || 0} 项检查`));
+      const heartbeat = maintenance.heartbeat?.updatedAt;
+      if (heartbeat) block.append(el("div", "cu-time", `执行器心跳：${new Date(heartbeat).toLocaleTimeString()}；单轮最长 45 分钟`));
+    }
     const date = maintenance.completedAt || maintenance.startedAt;
     if (date) block.append(el("div", "cu-time", `最近执行：${new Date(date).toLocaleString()}`));
     if (maintenance.notification) block.append(el("div", "cu-time", maintenance.notification.status === "sent" ? "飞书通知已发送" : "飞书通知未送达，请检查通知配置"));

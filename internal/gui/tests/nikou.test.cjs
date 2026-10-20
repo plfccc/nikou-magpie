@@ -30,6 +30,8 @@ async function fixture(browser, lang = "zh", width = 420, options = {}) {
   const page = await context.newPage();
   if (options.clock) await page.clock.install();
   page.setDefaultTimeout(5000);
+  // 冷启动导航与交互断言分开，交互仍限时5秒。
+  page.setDefaultNavigationTimeout(30000);
   const errors = [], writes = [], reads = [];
   const state = { instanceId: "fixture-instance", failStatus: false, failWrite: false, failHello: !!options.failHello, holdWrite: false,
     status: { workerStatus: "running", connection: "online", engine: "codex", supervisor: "console", launchProfile: { model: "gpt-test", effort: "medium" } },

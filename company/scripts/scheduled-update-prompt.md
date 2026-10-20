@@ -2,7 +2,7 @@
 
 用户授权：定时检查两个上游；有更新时自动合并、验证、生成本机版本包并安装。输出全部使用简体中文。
 
-版本包仅安装本机；公司 Magpie 源码允许推送到已授权的私有 GitHub 仓库 plfccc/nikou-magpie，不创建 GitHub Release，不上传公司 Nikou 源码或组合资产。保留实际验收记录，不伪造正式发布证据。
+版本包仅安装本机；公司 Magpie 源码允许推送到已授权的 GitHub 仓库 plfccc/nikou-magpie，不创建 GitHub Release，不上传公司 Nikou 源码或组合资产。该仓库当前为公开仓库，只允许网关改造代码、测试与脱敏元数据；保留实际验收记录，不伪造正式发布证据。
 
 ## 执行要求
 
@@ -14,7 +14,7 @@
 6. 本机安装根为 %LOCALAPPDATA%\NikouMagpie\preview。使用 install-preview.mjs 的事务安装，不覆盖旧版本目录；安装前保存 current.json、进程路径、两组件版本及所有可能修改的配置备份，保留可执行回滚入口。安装失败不切换旧指针。
 7. 现有 Worker 和控制台可能由 CC Switch 管理，不得直接结束、重启或切换管理权。先验证新 Nikou 包可与当前 Worker/控制台协议共存；如果需要中断真实 Worker、配置迁移或破坏协议兼容，记录 awaiting-maintenance-window 并保留旧指针，不能自动安装一半组件。允许只重启经过绝对路径确认的受管 Magpie GUI 来加载兼容的新组合预览。关闭启动库自动同步保护必须保持不变。
 8. 安装后核对指针、实际 EXE 路径及 SHA、两组件隔离自检与只读 hello/status。验收不通过按原指针回滚并复核，保留失败现场。无需发送飞书、邮件或其他外部消息。
-9. 成功后将维护结果以提交合并回公司分支，并将公司 Magpie 分支快进推送到私有仓库 https://github.com/plfccc/nikou-magpie.git 的 main（先检查仍为私有、远端可快进；不得force或上传Nikou源码；若推送失败保留本机成功安装并单独报告），确保下一轮锁已前进，避免重复集成。最终 result.md 写清状态：up-to-date / installed / blocked / failed / awaiting-maintenance-window，以及两上游提交、测试统计、安装事务、旧指针、回滚命令、错误原因。无法完成时明确失败，不声称发布完成。
+9. 成功后将维护结果以提交合并回公司分支，并将公司 Magpie 分支快进推送到固定仓库 https://github.com/plfccc/nikou-magpie.git 的 main（先检查 owner/name、远端可快进及待推文件不含内部源码或资产；不得force或上传Nikou源码；若推送失败保留本机成功安装并单独报告），确保下一轮锁已前进，避免重复集成。最终 result.md 写清状态：up-to-date / installed / blocked / failed / awaiting-maintenance-window，以及两上游提交、测试统计、安装事务、旧指针、回滚命令、错误原因。无法完成时明确失败，不声称发布完成。
 
 本机 Go：D:\project\hst\nikou\.tools\go1.26.8\go；Node 必须匹配 policy（当前24.11.1/ABI137）；npm 用 Node + npm-cli.js；Playwright NODE_PATH 在维护入口设置。实际 shell 可执行命令遵循 RTK.md。Git 仅在本机凭证助手中认证，不输出或复制凭证。
 

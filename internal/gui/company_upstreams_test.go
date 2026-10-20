@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 	"time"
@@ -16,6 +17,36 @@ import (
 )
 
 type upstreamTransport func(*http.Request) (*http.Response, error)
+
+func TestCompanyMaintenanceProgressOnlyReadsCurrentRun(t *testing.T) {
+	base := t.TempDir()
+	t.Setenv("LOCALAPPDATA", base)
+	state := filepath.Join(base, "NikouMagpie", "maintenance")
+	run := filepath.Join(state, "runs", "test-run")
+	if err := os.MkdirAll(run, 0700); err != nil {
+		t.Fatal(err)
+	}
+	write := func(file string, value interface{}) {
+		data, err := json.Marshal(value)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(file, data, 0600); err != nil {
+			t.Fatal(err)
+		}
+	}
+	write(filepath.Join(run, "progress.json"), map[string]interface{}{"stage": "Nikou完整测试", "status": "running", "secret": "不回传"})
+	write(filepath.Join(state, "latest.json"), map[string]interface{}{"status": "running", "logDirectory": run})
+	c := &upstreamChecker{}
+	progress := c.snapshot().Maintenance["progress"].(map[string]interface{})
+	if progress["stage"] != "Nikou完整测试" || progress["secret"] != nil {
+		t.Fatal(progress)
+	}
+	write(filepath.Join(state, "latest.json"), map[string]interface{}{"status": "running", "logDirectory": state})
+	if c.snapshot().Maintenance["progress"] != nil {
+		t.Fatal("越界日志目录不应读取")
+	}
+}
 
 func TestCompanyUpstreamsGitHubRateLimitFallsBackToGit(t *testing.T) {
 	for _, code := range []int{403, 429} {

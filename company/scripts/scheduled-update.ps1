@@ -48,6 +48,7 @@ try {
     [IO.File]::WriteAllText((Join-Path $stateRoot 'latest.json'), (@{status='running'; startedAt=(Get-Date).ToString('o'); summary='AI 正在集成上游并执行验证'; logDirectory=$logRoot} | ConvertTo-Json), $utf8)
     & $node (Join-Path $Root 'company\scripts\run-maintenance-agent.mjs') $Root $logRoot $codex
     $agentExit = $LASTEXITCODE
+    if ($agentExit -eq 124) { throw '维护超过45分钟，已停止本轮维护进程树，候选和旧安装已保留；请检查最后一项验证记录' }
     if ($agentExit -ne 0) { throw '维护 AI 执行中断（可能是模型路由或网络失败），候选目录已保留；请查看本轮 codex.log 后继续，不能据此认定已安装' }
     $reply = Get-Content -Raw -Encoding utf8 $output | ConvertFrom-Json
     if ($reply.status -notin @('installed', 'up-to-date', 'blocked', 'failed', 'awaiting-maintenance-window')) { throw '维护执行器返回未知状态' }

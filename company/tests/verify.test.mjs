@@ -10,6 +10,10 @@ test('源码验证允许本地脏状态但证据禁止发布，正式用途拒�
   const w = await workspace(t); await writeFile(`${w.root}/dirty.txt`, '开发');
   assert.equal((await module.verify({ ...w, profile: 'source' })).exitCode, 10);
   const commands = [];
+  const progressFile = `${w.dir}/progress.json`;
+  const previous = process.env.NIKOU_MAINTENANCE_PROGRESS_FILE;
+  process.env.NIKOU_MAINTENANCE_PROGRESS_FILE = progressFile;
+  t.after(() => { if (previous === undefined) delete process.env.NIKOU_MAINTENANCE_PROGRESS_FILE; else process.env.NIKOU_MAINTENANCE_PROGRESS_FILE = previous; });
   const run = o => { commands.push(o); return o.file === 'git' ? w.run(o) : Promise.resolve({ exitCode: 0, stdout: '', stderr: '', timedOut: false }); };
   const evidence = await module.verify({ ...w, run, profile: 'source', allowDirty: true, npmCli: `${w.dir}/npm-cli.js` });
   assert.equal(evidence.exitCode, 0, JSON.stringify(evidence)); assert.equal(evidence.releaseEligible, false); assert.equal(evidence.provenance.dirty, true);
@@ -17,6 +21,10 @@ test('源码验证允许本地脏状态但证据禁止发布，正式用途拒�
   const browserCommands = commands.filter(command => command.args.includes('internal/gui/tests/plugin-kernel.test.cjs'));
   assert.equal(browserCommands.length, 2);
   assert.ok(browserCommands.every(command => command.args.includes('--test-concurrency=1')));
+  const progress = JSON.parse(await readFile(progressFile, 'utf8'));
+  assert.equal(progress.status, 'pass');
+  assert.equal(progress.completedChecks, evidence.checks.length);
+  assert.ok(progress.stage);
 });
 
 test('产物验证必须运行两个专用自检，缺自检或ABI错拒绝签发可发布证据', async t => {

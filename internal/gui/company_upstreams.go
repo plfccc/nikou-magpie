@@ -63,6 +63,24 @@ func (c *upstreamChecker) snapshot() upstreamStatus {
 				for _, key := range []string{"status", "summary", "message", "completedAt", "startedAt", "notification"} {
 					s.Maintenance[key] = latest[key]
 				}
+				if latest["status"] == "running" {
+					logDir, _ := latest["logDirectory"].(string)
+					runs := filepath.Join(base, "NikouMagpie", "maintenance", "runs")
+					if rel, err := filepath.Rel(runs, logDir); err == nil && rel != "." && rel != ".." && filepath.Dir(rel) == "." && !filepath.IsAbs(rel) {
+						for _, name := range []string{"progress", "heartbeat"} {
+							if data, err := os.ReadFile(filepath.Join(logDir, name+".json")); err == nil && len(data) < 4096 {
+								var info map[string]interface{}
+								if json.Unmarshal(data, &info) == nil {
+									clean := make(map[string]interface{})
+									for _, key := range []string{"stage", "status", "startedAt", "updatedAt", "completedChecks"} {
+										clean[key] = info[key]
+									}
+									s.Maintenance[name] = clean
+								}
+							}
+						}
+					}
+				}
 			}
 		}
 	}

@@ -74,9 +74,16 @@ export async function sandbox(base) {
   return { dir, env };
 }
 export async function command(ctx, checks, label, spec, env, required = true) {
+  const startedAt = new Date().toISOString();
+  const progressFile = process.env.NIKOU_MAINTENANCE_PROGRESS_FILE;
+  const progress = async status => {
+    if (progressFile) await writeJson(progressFile, { stage: label, status, startedAt, updatedAt: new Date().toISOString(), completedChecks: checks.length });
+  };
+  await progress('running');
   const result = await (ctx.run ?? runProcess)({ timeoutMs: 600_000, ...spec, env: { ...env, ...(spec.env ?? {}) } });
   const entry = { name: label, status: result.exitCode === 0 ? 'pass' : 'fail', file: spec.file, args: spec.args, cwd: spec.cwd, ...result };
   checks.push(entry);
+  await progress(entry.status);
   if (required && result.exitCode !== 0) throw new IntegrationError(14, `${label}失败，子进程退出码${result.exitCode}`, 'COMMAND_FAILED');
   return result;
 }
