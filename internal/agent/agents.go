@@ -88,6 +88,7 @@ func homes() (home, cfg string) {
 // builtins are the agents magpie has wiring of its own for.
 func builtins(home, cfg string) []*Agent {
 	return append([]*Agent{
+		nikou(home),
 		claude(home),
 		claudeDesktop(home),
 		claudeScience(),

@@ -114,6 +114,11 @@ func targetOf(a *agent.Agent) *Target {
 		t.Agent = &named
 	}
 	switch a.ID {
+	case "nikou":
+		d := filepath.Join(h, ".nikou-block", "library")
+		t.Instructions = filepath.Join(d, "AGENTS.md")
+		t.MCP = &mcpFile{Path: filepath.Join(d, "mcp.json"), Format: fmtClaude}
+		t.Skills = filepath.Join(d, "skills")
 	case "claude":
 		d := claudeDir()
 		t.Instructions = filepath.Join(d, "CLAUDE.md")
