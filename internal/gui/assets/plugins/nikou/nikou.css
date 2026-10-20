@@ -16,6 +16,13 @@
 .nikou-scope .nikou-fields { display: grid; grid-template-columns: minmax(0, 1fr) 160px auto; }
 #view-nikou .nikou-tools { gap: 8px; }
 #view-nikou .nikou-tools > .text, .nikou-fields > .text { min-height: 30px; padding: 5px 10px; }
+#view-nikou .text:not(.primary) { background: var(--pill); color: var(--fg); border-radius: 7px; font-weight: 500; }
+#view-nikou .text:not(.primary):hover:not(:disabled) { background: var(--pill-hover); }
+.nikou-update-status { display: inline-block; padding: 2px 7px; border-radius: 5px; background: var(--pill); color: var(--muted); font-size: 11px; font-weight: 500; }
+.nikou-update-status[data-state="update-available"] { background: var(--green-soft); color: var(--green); }
+.nikou-company-title { display: flex; align-items: center; gap: 8px; grid-column: 1; flex-wrap: wrap; }
+.nikou-company > .nikou-tools { padding-bottom: 12px; border-bottom: 1px solid var(--line); }
+.nikou-company-row:first-child { border-top: 0; }
 .nikou-company > .nikou-tools { justify-content: space-between; margin-bottom: 8px; }
 .nikou-company > .nikou-tools h3 { margin: 0; }
 .nikou-note:empty { display: none; }

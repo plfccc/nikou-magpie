@@ -8,7 +8,9 @@ window.mountNikouCompany = (root, ui) => {
   const toolBody = ui.el("div"), jobBody = ui.el("div");
   const head = (section, title, buttonTitle, handler) => {
     const row = ui.el("div", "nikou-tools");
-    row.append(ui.el("h3", "", title), ui.button(buttonTitle, handler));
+    const button = ui.button(buttonTitle, handler);
+    button.dataset.companyRefresh = title === "公司工具" ? "tools" : "jobs";
+    row.append(ui.el("h3", "", title), button);
     section.append(row);
   };
   const api = async (route, body) => {
@@ -52,6 +54,8 @@ window.mountNikouCompany = (root, ui) => {
   const label = { "not-checked": "尚未检测", "not-installed": "未安装", "update-available": "有更新", "local-newer": "本机版本较新", current: "已是最新", unknown: "检查失败" };
   const initialized = { ready: "已初始化", missing: "未初始化", incomplete: "配置待补齐" };
   async function loadTools(check = false) {
+    const checkButton = tools.querySelector('[data-company-refresh="tools"]');
+    if (check) { checkButton.textContent = "正在检测…"; checkButton.setAttribute("aria-busy", "true"); }
     try {
       const data = await api("company-tools" + (check ? "?check=1" : ""));
       if (disposed) return;
@@ -59,8 +63,12 @@ window.mountNikouCompany = (root, ui) => {
       for (const item of data.tools || []) {
         const row = ui.el("div", "nikou-company-row"); row.dataset.tool = item.name;
         const state = data.initialization?.[item.name === "hst-mcp" ? "hst" : "node"];
-        row.append(ui.el("strong", "", item.name === "hst-mcp" ? "华盛通 MCP" : "Nikou 本地工具"),
-          ui.el("p", "nikou-note", `本机 ${item.installed || "未安装"} · 最新 ${item.latest || "未确认"} · ${label[item.state] || "未知"}`),
+        const title = ui.el("div", "nikou-company-title");
+        const badge = ui.el("span", "nikou-update-status", label[item.state] || "未知");
+        badge.dataset.state = item.state;
+        title.append(ui.el("strong", "", item.name === "hst-mcp" ? "华盛通 MCP" : "Nikou 本地工具"), badge);
+        row.append(title,
+          ui.el("p", "nikou-note", `本机版本 ${item.installed || "未安装"}　·　最新版本 ${item.latest || "未确认"}`),
           ui.el("p", "nikou-note", `${initialized[state?.state] || "配置状态未知"}${state?.missing?.length ? " · 缺少 " + state.missing.join("、") : ""}`));
         const actions = ui.el("div", "nikou-tools");
         actions.append(ui.button(item.installed ? "检查并升级" : "安装", () => write("company-tools/action", { tool: item.name, action: "update" }, `确认安装公司私服的最新 ${item.name}？`)),
@@ -70,6 +78,7 @@ window.mountNikouCompany = (root, ui) => {
         toolBody.append(row);
       }
     } catch (error) { if (!disposed) toolBody.replaceChildren(ui.el("p", "nikou-error", error.message)); }
+    finally { if (check && !disposed) { checkButton.textContent = "检查更新"; checkButton.removeAttribute("aria-busy"); } }
   }
   async function loadJobs() {
     try {
@@ -117,7 +126,7 @@ window.mountNikouCompany = (root, ui) => {
       if (data.daemon?.status === "running" && !data.jobs?.length) jobBody.append(ui.el("p", "nikou-note", "暂无 Job。可通过完整控制台或 nikou-job CLI 创建。"));
     } catch (error) { if (!disposed) jobBody.replaceChildren(ui.el("p", "nikou-error", error.message)); }
   }
-  head(tools, "公司工具", "检测更新", async () => { if (busy) return; setBusy(true); try { await loadTools(true); } finally { if (!disposed) setBusy(false); } });
+  head(tools, "公司工具", "检查更新", async () => { if (busy) return; setBusy(true); try { await loadTools(true); } finally { if (!disposed) setBusy(false); } });
   head(jobs, "Nikou Job", "刷新任务", loadJobs);
   tools.append(message, toolBody); jobs.append(jobBody);
   root.append(tools, jobs); tools.style.flexShrink = jobs.style.flexShrink = "0";

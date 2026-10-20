@@ -53,3 +53,5 @@ Nikou 内置页增加公司工具及 Job 卡片，调用固定桥接路由 `comp
 公司工具脚本必须在实际 index.html 中先于 Nikou client 加载；Manifest 声明不会自动注入静态入口。TestBuiltinClientsLoaded 检查资源加载，nikou.test.cjs 使用真实入口在双浏览器断言两张卡片，防止孤立组件测试掩盖入口遗漏。
 
 Nikou 页面复用原生 list、pick、text primary 与主题变量：内容限宽，模型与思考档位按列对齐，窄屏保存按钮独占一行；公司工具状态与操作分列显示。双浏览器入口测试同时检查选择器对齐与横向溢出。
+
+Nikou 普通操作按钮使用原生会话继续按钮相同的 pill/pill-hover 背景、前景色和圆角；主保存操作保留 primary。公司工具状态以独立标签呈现，检测期间按钮显示正在检测并禁用，版本信息不再与状态挤在同一段。
