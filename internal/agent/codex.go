@@ -1889,9 +1889,9 @@ func codexReached(dir string, since time.Time) (at time.Time, to string, refused
 	}
 	slices.Sort(logs)
 	path := logs[len(logs)-1]
-	key := reachedKey{path: path, since: since.Unix(), db: stampOf(path), wal: stampOf(path + "-wal")}
+	key := reachedKey{path: path, since: since.Unix(), db: stampOf(path), wal: stampOf(path + "-wal"), shm: stampOf(path + "-shm"), dataVersion: sqliteDataVersion(path), latestID: sqliteLatestLogID(path)}
 	reachedMu.Lock()
-	if c, ok := reachedMemo[dir]; ok && c.key == key && time.Since(c.read) < reachedFor &&
+	if c, ok := reachedMemo[dir]; ok && c.key == key && time.Since(c.read) < reachedFor && !c.refused &&
 		(c.at.IsZero() || time.Since(c.at) < 24*time.Hour) {
 		reachedMu.Unlock()
 		return c.at, c.to, c.refused
@@ -1910,9 +1910,40 @@ func codexReached(dir string, since time.Time) (at time.Time, to string, refused
 const reachedFor = 15 * time.Second
 
 type reachedKey struct {
-	path    string
-	since   int64
-	db, wal fileStamp
+	path         string
+	since        int64
+	db, wal, shm fileStamp
+	dataVersion  int64
+	latestID     int64
+}
+
+// SQLite's data_version changes for commits made by another connection even
+// when WAL file timestamps stay coarse on Windows. It lets the polling cache
+// notice a new Codex request without reopening and scanning the full log.
+func sqliteDataVersion(path string) int64 {
+	db, err := provider.OpenReadOnly(path)
+	if err != nil {
+		return -1
+	}
+	defer db.Close()
+	var version int64
+	if db.QueryRow("PRAGMA data_version").Scan(&version) != nil {
+		return -1
+	}
+	return version
+}
+
+func sqliteLatestLogID(path string) int64 {
+	db, err := provider.OpenReadOnly(path)
+	if err != nil {
+		return -1
+	}
+	defer db.Close()
+	var id int64
+	if db.QueryRow("SELECT COALESCE(MAX(id), 0) FROM logs").Scan(&id) != nil {
+		return -1
+	}
+	return id
 }
 
 type fileStamp struct{ size, mod int64 }

@@ -277,8 +277,19 @@ func (a *Agent) CLIMissing() bool {
 	if a.WSL != "" || a.Plugin != "" || a.Bin == "" || a.detect != nil && a.ID != "goose" {
 		return false
 	}
-	if len(installCommands(a.ID, runtime.GOOS, true)) == 0 && !cliOnly[a.ID] {
+	// Native integrations can be detected from their config even when Magpie
+	// has no vendor installer entry; their disconnect path still needs the
+	// same missing-CLI safeguard as the built-in CLI agents.
+	if len(installCommands(a.ID, runtime.GOOS, true)) == 0 && !cliOnly[a.ID] && a.Native == nil {
 		return false
+	}
+	// Native adapters may intentionally have no Magpie installer entry. If
+	// their owned config is present and their declared CLI is gone, allow the
+	// offline disconnect path to restore the staged settings.
+	if a.Native != nil && a.Bin != "" && proc.FindTool(a.Bin) == "" {
+		if _, err := os.Stat(a.Path); err == nil {
+			return true
+		}
 	}
 	if !a.Detected() {
 		return false
