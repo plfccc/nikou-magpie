@@ -11,8 +11,10 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/yetone/magpie/internal/gateway"
 	"github.com/yetone/magpie/internal/nikou"
 	"github.com/yetone/magpie/internal/pluginrt"
+	"github.com/yetone/magpie/internal/provider"
 )
 
 // NikouAssetsCheck 供无副作用自检使用，仅检查嵌入资源。
@@ -85,6 +87,33 @@ func nikouHandler(w Windows, portLookup func() (int, bool)) http.HandlerFunc {
 		}
 		base := fmt.Sprintf("http://127.0.0.1:%d", port)
 		route := strings.TrimPrefix(r.URL.Path, "/api/nikou/")
+		if route == "gateway" && r.Method == "GET" || route == "gateway/connect" && r.Method == "POST" {
+			entries, _ := provider.CatalogFor("nikou")
+			connection, err := nikou.NewGatewayConnection(gateway.URL(), gateway.TokenFor("nikou"), entries)
+			if err != nil {
+				writeJSON(rw, nikou.Failure(id, "GATEWAY_NOT_READY", "网关地址不是受支持的本机回环地址", false))
+				return
+			}
+			if r.Method == "GET" {
+				writeJSON(rw, nikou.Success(id, connection))
+				return
+			}
+			if !input.Confirmed {
+				writeJSON(rw, nikou.Failure(id, "INVALID_REQUEST", "接入受管网关需要确认", false))
+				return
+			}
+			// 地址和目录只从当前网关生成，忽略浏览器提交的端点和凭据。
+			body, err = json.Marshal(struct {
+				RequestID string `json:"requestId"`
+				Confirmed bool   `json:"confirmed"`
+				nikou.GatewayConnection
+			}{id, true, connection})
+			if err != nil {
+				writeJSON(rw, nikou.Failure(id, "INVALID_REQUEST", "网关目录无法编码", false))
+				return
+			}
+			route = "v2/runtime/gateway"
+		}
 		if route == "open" && r.Method == "POST" {
 			if !input.Confirmed || w == nil {
 				writeJSON(rw, nikou.Failure(id, "INVALID_REQUEST", "打开控制台需要确认及本机桌面入口", false))

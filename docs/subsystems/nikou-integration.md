@@ -12,6 +12,14 @@
 
 ## 写操作与失败
 
+### 受管模型网关连接
+
+桌面 `GET /api/nikou/gateway` 读取当前网关的连接目录，`POST /api/nikou/gateway/connect` 在确认后将同一目录写入 Nikou 的 `/api/integration/v2/runtime/gateway`。地址来自 `gateway.URL()`，来源标识来自 `gateway.TokenFor("nikou")`，模型只来自 `provider.CatalogFor("nikou")`；浏览器传入的地址、模型和凭据不参与生成。地址必须是带有效端口的本机 HTTP 根地址，`localhost` 固定成 `127.0.0.1`，不允许远端、路径、查询、用户信息或重定向。固定来源标识不是授权凭据；控制台管理令牌只用于管理 HTTP 请求头，不写入推理连接。
+
+v2 是资源路径版本，信封仍使用 `protocol: 1`。连接写入和目录读取先经 v1 hello 探测独立的 `gatewayConnection` 能力；运行档案操作仍要求 `runtimeProfilesV2`，两者不能互相替代。连接写操作沿用 requestId 和未知结果不重放规则。目录中的上下文、输出和思考档位复用网关目录；未知大小不补默认值，没有可靠来源的工具能力不声明。所有目录模型均为 `verified: false`，不能凭目录宣布真实模型或群聊权限已经验收，也不启动或重启 Worker。
+
+`TestGatewayConnectionKeepsCatalogUnverified`、`TestGatewayConnectionRejectsUnmanagedOrigins`、`TestConsoleV2GatewayUsesSeparateCapability` 和 `TestNikouGatewayConnectUsesManagedConnection` 验证目录真实性、安全地址、能力协商、管理令牌隔离及浏览器不能替换端点。
+
 写操作必须带 requestId；相同 ID 与内容返回原结果，不自动重放。Nikou 控制台成功与明确失败回执保留24小时，running/unknown 不自动过期；进程重启时残留 running 转为 unknown。Job 写请求传输失败或回执损坏同样返回 unknown，不视为未执行。magpie 的跨进程账号回执位于配置目录 `nikou-bridge-operations.json`，使用文件锁和原子写入；确认结果保留24小时，未确认 pending 不自动过期。锁失败拒绝执行；损坏回执保持未知，不按空记录重新执行。
 
 普通读、写、额度刷新分别限时5、15、60秒。写响应不可信或超时后显示 `OPERATION_UNKNOWN`；页面查询回执并刷新真实状态，不重发写请求。页面记录 hello 的 instanceId，实例变化时不沿用旧回执宣称成功。成功保存模型配置不代表运行中的 Worker 已使用它。
@@ -48,7 +56,7 @@ Nikou 内置页增加公司工具及 Job 卡片，调用固定桥接路由 `comp
 
 `go test ./internal/nikou ./internal/cli ./internal/gui ./internal/update -run 'Nikou|Console|AccountReceipt|Company|Builtin'` 验证本机桥接、回执与内置守卫；维护脚本通过 `node --test company/tests/*.test.mjs` 验证真实临时 Git、路径、离线迁移、故障回滚。
 
-`node company/scripts/check-contract.mjs <Nikou源码绝对路径>` 构建 Go 探针并启动隔离用户目录中的 Nikou 产物控制台，只验证 hello/status，不启动 Worker。`internal/gui/tests/nikou.test.cjs` 在 Chromium/WebKit 验证交互、错误处理、实例变化与轮询暂停。
+`node company/scripts/check-contract.mjs <Nikou源码绝对路径>` 构建 Go 探针并启动隔离用户目录中的 Nikou 产物控制台，验证 hello/status、网关登记、重复请求回执及目录字段，并断言登记前后 Worker 均保持停止。`internal/gui/tests/nikou.test.cjs` 在 Chromium/WebKit 验证交互、错误处理、实例变化与轮询暂停。
 
 公司工具脚本必须在实际 index.html 中先于 Nikou client 加载；Manifest 声明不会自动注入静态入口。TestBuiltinClientsLoaded 检查资源加载，nikou.test.cjs 使用真实入口在双浏览器断言两张卡片，防止孤立组件测试掩盖入口遗漏。
 

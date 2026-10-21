@@ -33,7 +33,7 @@ async function fixture(browser, lang = "zh", width = 420, options = {}) {
   // 冷启动导航与交互断言分开，交互仍限时5秒。
   page.setDefaultNavigationTimeout(30000);
   const errors = [], writes = [], reads = [];
-  const state = { instanceId: "fixture-instance", failStatus: false, failWrite: false, failHello: !!options.failHello, holdWrite: false,
+  const state = { instanceId: "fixture-instance", gatewaySupported: !!options.gateway, gatewayConfigured: false, failGateway: false, failStatus: false, failWrite: false, failHello: !!options.failHello, holdWrite: false,
     status: { workerStatus: "running", connection: "online", engine: "codex", supervisor: "console", launchProfile: { model: "gpt-test", effort: "medium" } },
     scopes: { p2p: { model: "gpt-test", effort: "medium" }, group: { model: "gpt-test", effort: "high" } } };
   page.on("pageerror", (error) => errors.push(error.message));
@@ -50,6 +50,7 @@ async function fixture(browser, lang = "zh", width = 420, options = {}) {
         if (state.nextInstanceId) state.instanceId = state.nextInstanceId;
         if (state.operationUnknown) return json({ protocol: 1, requestId: request.postDataJSON().requestId, ok: false, error: { code: "OPERATION_UNKNOWN", message: "操作结果未知" } });
         if (state.failWrite) return json({ protocol: 1, ok: false, error: { code: "WORKER_ERROR", message: "操作失败 <img src=x onerror=alert(1)>" } });
+        if (endpoint === "gateway/connect") state.gatewayConfigured = true;
         return json({ ...envelope(endpoint === "open" ? { opened: true, url: "http://127.0.0.1:19736/" } : {}), requestId: state.wrongWriteId ? "wrong-id" : request.postDataJSON().requestId });
       }
       reads.push(endpoint);
@@ -57,11 +58,17 @@ async function fixture(browser, lang = "zh", width = 420, options = {}) {
         if (state.httpError) return route.fulfill({ status: 503, json: { protocol: 1, ok: false, error: { code: "OFFLINE", message: "控制台 HTTP 故障" } } });
         if (state.badRead) return json({ ...envelope({}), protocol: 2 });
         if (state.missingReadId) return json({ protocol: 1, ok: true, data: { service: "nikou-console", protocol: 1 } });
-        return json(state.failHello ? { protocol: 1, ok: false, error: { code: "UNAVAILABLE", message: "控制台暂不可用" } } : envelope({ service: "nikou-console", protocol: 1, instanceId: state.instanceId, capabilities: state.noCapabilities ? {} : { workerControl: true, scopedRuntime: true, operationStatus: true, accounts: true } }));
+        return json(state.failHello ? { protocol: 1, ok: false, error: { code: "UNAVAILABLE", message: "控制台暂不可用" } } : envelope({ service: "nikou-console", protocol: 1, instanceId: state.instanceId, capabilities: state.noCapabilities ? {} : { workerControl: true, scopedRuntime: true, operationStatus: true, accounts: true, gatewayConnection: state.gatewaySupported } }));
       }
       if (endpoint === "status") return json(state.failStatus ? { protocol: 1, ok: false, error: { code: "OFFLINE", message: "连接中断" } } : envelope({ status: state.status, scopes: state.scopes }));
       if (endpoint === "runtime/catalog") return json(envelope({ engines: ["codex", "claude", "kiro"].map((value) => ({ value, label: value, enabled: true })), models: [{ value: "gpt-test", label: "gpt-test" }, { value: "other-model", label: "other-model" }], efforts: ["medium", "high"], defaultModel: "gpt-test", defaultEffort: "medium" }));
       if (endpoint === "accounts") return json(envelope({ currentAlias: "主账号", profiles: [{ id: "encoded-account-id", alias: "备用账号", planLabel: "套餐", usageLabel: "剩余 80%", stale: !!state.quotaStale, fetchOk: !state.quotaStale, updatedAt: "2026-10-18T08:00:00Z" }] }));
+      if (endpoint === "gateway" || endpoint === "v2/runtime/catalog") {
+        if (state.failGateway) return json({ protocol: 1, ok: false, error: { code: "CATALOG_UNAVAILABLE", message: "目录不可用" } });
+        const models = [{ modelRef: "relay/gpt-test", protocol: "openai-responses", verified: false }];
+        return json(envelope(endpoint === "gateway" ? { origin: "http://127.0.0.1:3425", agentToken: "fixture-agent-token-secret", sessionHeader: "X-Magpie-Session", models }
+          : { connectionId: "magpie-local", configured: state.gatewayConfigured, verified: false, workerIntegrated: false, models: state.gatewayConfigured ? models : [] }));
+      }
       return json(envelope({ state: state.unknownReceipt ? "unknown" : "succeeded" }));
     }
     if (url.pathname === "/api/state") return json({ agents: [], profiles: [], settings: { lang, theme: "light" } });
@@ -76,6 +83,69 @@ async function fixture(browser, lang = "zh", width = 420, options = {}) {
 }
 
 for (const engine of process.env.BROWSER ? [process.env.BROWSER] : ["chromium", "webkit"]) {
+  test(`${engine}: 网关登记复用回执且不改变在线 Worker`, async t => {
+    const browser = await (engine === "webkit" ? webkit.launch() : chromium.launch({ channel: "chromium" }));
+    t.after(() => browser.close());
+    for (const width of [420, 1100]) {
+      const f = await fixture(browser, "zh", width, { gateway: true });
+      try {
+        const panel = f.view.locator("[data-gateway]");
+        const button = panel.getByRole("button", { name: "登记网关连接", exact: true });
+        await panel.getByText("尚未登记", { exact: true }).waitFor();
+        await f.view.locator('[data-action="check"]:enabled').waitFor();
+        assert.match(await panel.innerText(), /当前网关目录模型数：1/);
+        assert.match(await panel.innerText(), /不影响当前工作进程/);
+        await userClick(f.page, f.view.locator('[data-pick="engine"]'));
+        await f.page.getByRole("menuitemradio", { name: "claude", exact: true }).click();
+        f.state.holdWrite = true;
+        const posted = f.page.waitForRequest(r => r.url().endsWith("/api/nikou/gateway/connect") && r.method() === "POST");
+        await userClick(f.page, button);
+        await posted;
+        const registering = panel.getByRole("button", { name: "正在登记…", exact: true });
+        assert.equal(await registering.isDisabled(), true);
+        assert.equal(await registering.getAttribute("aria-busy"), "true");
+        await registering.evaluate(el => el.click());
+        assert.equal(f.writes.length, 1, "重复点击不能重放登记");
+        assert.deepEqual(Object.keys(f.writes[0].body).sort(), ["confirmed", "requestId"]);
+        f.state.holdWrite = false;
+        await panel.getByText("已登记，待执行验证", { exact: true }).waitFor();
+        assert.match(await panel.innerText(), /已登记模型数：1/);
+        assert.match(await f.view.locator('[data-pick="engine"]').innerText(), /claude/, "登记不能丢失未保存的引擎选择");
+        assert.equal(await f.view.locator('[data-status="engine"]').innerText(), "codex");
+        assert.ok(f.writes.every(write => write.endpoint === "gateway/connect"), "登记不能控制 Worker");
+        assert.equal(await f.page.locator('body').evaluate(el => el.outerHTML.includes("fixture-agent-token-secret")), false, "来源标识不进入DOM");
+        assert.ok(await f.view.evaluate(el => el.scrollWidth <= el.clientWidth), "宽窄窗口无横向溢出");
+        assert.deepEqual(f.errors, []);
+      } finally { f.state.holdWrite = false; await f.context.close(); }
+    }
+  });
+
+  test(`${engine}: 网关登记失败保留未登记状态且旧控制台隐藏卡片`, async t => {
+    const browser = await (engine === "webkit" ? webkit.launch() : chromium.launch({ channel: "chromium" }));
+    t.after(() => browser.close());
+    const f = await fixture(browser, "zh", 420, { gateway: true });
+    t.after(() => f.context.close());
+    const panel = f.view.locator("[data-gateway]");
+    await panel.getByText("尚未登记", { exact: true }).waitFor();
+    await f.view.locator('[data-action="check"]:enabled').waitFor();
+    f.state.failWrite = true;
+    await userClick(f.page, panel.getByRole("button", { name: "登记网关连接", exact: true }));
+    await f.view.getByRole("alert").filter({ hasText: "操作失败" }).waitFor();
+    assert.equal(f.writes.length, 1);
+    assert.equal(await panel.getByText("尚未登记", { exact: true }).count(), 1);
+    f.state.failGateway = true;
+    await userClick(f.page, f.view.locator('[data-action="check"]'));
+    await panel.getByText("登记状态读取失败，请重新检查连接。", { exact: true }).waitFor();
+    assert.equal(await panel.getByRole("button").isDisabled(), true);
+    assert.equal(await f.view.locator('[data-action="start"]').isDisabled(), false, "目录故障不影响既有管理能力");
+    f.state.gatewaySupported = false;
+    const count = f.reads.filter(endpoint => endpoint === "gateway").length;
+    await userClick(f.page, f.view.locator('[data-action="check"]'));
+    await panel.waitFor({ state: "hidden" });
+    assert.equal(f.reads.filter(endpoint => endpoint === "gateway").length, count, "旧控制台不请求新目录");
+    assert.deepEqual(f.errors, []);
+  });
+
   test(`${engine}: 实际页面入口加载公司工具与 Job`, async t => {
     const browser = await (engine === "webkit" ? webkit.launch() : chromium.launch({ channel: "chromium" }));
     t.after(() => browser.close());

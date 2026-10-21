@@ -40,6 +40,13 @@ func NewConsoleClient(base, tokenPath string) (*ConsoleClient, error) {
 }
 
 func allowedRoute(method, route string) bool {
+	if strings.HasPrefix(route, "v2/") {
+		switch method + " " + strings.TrimPrefix(route, "v2/") {
+		case "GET runtime/profiles", "GET runtime/catalog", "GET runtime/status", "POST runtime/profiles/validate", "POST runtime/profiles/update", "POST runtime/gateway":
+			return true
+		}
+		return false
+	}
 	if method == "GET" {
 		switch route {
 		case "hello", "status", "runtime/catalog", "accounts", "company-tools", "jobs", "jobs/detail", "jobs/log", "jobs/service":
@@ -75,6 +82,19 @@ func (c *ConsoleClient) Call(ctx context.Context, method, route string, query ur
 		if !hello.OK {
 			return hello
 		}
+		if strings.HasPrefix(route, "v2/") {
+			raw, _ := json.Marshal(hello.Data)
+			var data Hello
+			capability := "runtimeProfilesV2"
+			if route == "v2/runtime/gateway" {
+				capability = "gatewayConnection"
+			}
+			valid := json.Unmarshal(raw, &data) == nil
+			supported := data.Capabilities[capability] || route == "v2/runtime/catalog" && data.Capabilities["gatewayConnection"]
+			if !valid || !supported {
+				return Failure(id, "CAPABILITY_UNSUPPORTED", "Nikou 控制台尚不支持运行档案，请更新公司组件组合", false)
+			}
+		}
 	}
 	return c.exchange(ctx, method, route, query, body, id)
 }
@@ -100,6 +120,9 @@ func (c *ConsoleClient) exchange(ctx context.Context, method, route string, quer
 	ctx, cancel := context.WithTimeout(ctx, limit)
 	defer cancel()
 	endpoint := c.base + "/api/integration/v1/" + route
+	if strings.HasPrefix(route, "v2/") {
+		endpoint = c.base + "/api/integration/" + route
+	}
 	if len(query) > 0 {
 		endpoint += "?" + query.Encode()
 	}

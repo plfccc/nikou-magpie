@@ -28,6 +28,8 @@ package agentenv
 // Vars are the variables, by the agent they belong to. A sandbox clears all
 // of them, and sets back the ones its own fixtures need.
 var Vars = []string{
+	// Nikou 受管运行标识也需隔离，避免测试探测已安装的公司运行时。
+	"NIKOU_MANAGED_RUNTIME",
 	// Claude Code, Codex and Copilot CLI
 	"CLAUDE_CONFIG_DIR", "CODEX_HOME", "COPILOT_HOME",
 	// Claude Code's temp folder, the images its sessions were given

@@ -4,7 +4,7 @@
     let root, timer, observer, controller, reading = null, companyPanel;
     let hello = null, snapshot = null, catalogs = {}, accounts = null;
     let selectedEngine = "", drafts = {}, dirty = false, busy = false, checked = false, disposed = false;
-    let errorText = "", noticeText = "", catalogTurn = 0;
+    let errorText = "", noticeText = "", catalogTurn = 0, gatewayState = null, writingEndpoint = "";
     const $ = (selector) => root.querySelector(selector);
     const words = (value) => t(value);
     const text = (tag, cls, value) => ui.el(tag, cls, words(value));
@@ -65,6 +65,12 @@
         if (action === "check") button.disabled = busy || !!reading;
         else if (action === "open") button.disabled = busy || !!reading || !active();
         else if (["start", "stop", "restart"].includes(action)) button.disabled = !can("workerControl");
+        else if (action === "gateway-connect") {
+          button.disabled = !can("gatewayConnection") || !gatewayState?.known;
+          const registering = busy && writingEndpoint === "gateway/connect";
+          button.textContent = words(registering ? "正在登记…" : "登记网关连接");
+          button.setAttribute("aria-busy", String(registering));
+        }
         else if (action?.startsWith("save-")) {
           const scope = action.slice(5), catalog = catalogs[scope];
           button.disabled = !can("scopedRuntime")
@@ -150,6 +156,27 @@
       lock();
     }
 
+    async function readGateway(connected, signal) {
+      if (!connected.capabilities?.gatewayConnection) return null;
+      try {
+        const [gateway, catalog] = await Promise.all([
+          request("gateway", undefined, signal), request("v2/runtime/catalog", undefined, signal),
+        ]);
+        if (!Array.isArray(gateway.models) || !Array.isArray(catalog.models) || typeof catalog.configured !== "boolean") throw new Error();
+        // 仅保留展示摘要，不把来源标识和端点凭据交给 DOM 或页面状态。
+        return { known: true, configured: catalog.configured, availableCount: gateway.models.length, registeredCount: catalog.models.length };
+      } catch { return { known: false }; }
+    }
+
+    function paintGateway() {
+      const panel = $("[data-gateway]");
+      panel.hidden = !hello?.capabilities?.gatewayConnection;
+      $("[data-gateway-state]").textContent = words(!gatewayState?.known ? "登记状态读取失败，请重新检查连接。"
+        : gatewayState.configured ? "已登记，待执行验证" : "尚未登记");
+      $("[data-gateway-count]").textContent = gatewayState?.known
+        ? words("当前网关目录模型数：") + gatewayState.availableCount + " · " + words("已登记模型数：") + gatewayState.registeredCount : "";
+    }
+
     function paint() {
       const state = current();
       const values = {
@@ -162,6 +189,7 @@
       paintMessages();
       paintPickers();
       paintAccounts();
+      paintGateway();
       lock();
     }
 
@@ -216,11 +244,13 @@
           }));
           const nextAccounts = connected.capabilities?.accounts && ["codex", "claude"].includes(engine)
             ? await request("accounts?" + new URLSearchParams({ engine }), undefined, signal) : null;
+          const nextGateway = await readGateway(connected, signal);
           if (!active() || signal.aborted) return;
           hello = connected;
           snapshot = next;
           selectedEngine = engine;
           accounts = nextAccounts;
+          gatewayState = nextGateway;
           for (const [key, cat] of results) {
             catalogs[key] = cat;
             drafts[key] = takeDraft(key, cat, dirty ? drafts[key] : next.scopes[key]);
@@ -245,6 +275,7 @@
     async function write(endpoint, body) {
       if (endpoint !== "open" && !checked || busy || reading || !active()) return;
       busy = true;
+      writingEndpoint = endpoint;
       pause();
       controller?.abort();
       if (reading) await reading;
@@ -269,7 +300,7 @@
           }
         }
         succeeded = true;
-        dirty = false;
+        if (endpoint === "runtime/select") dirty = false;
         noticeText = endpoint === "open" ? words(result.opened ? "已打开完整控制台" : "控制台未能打开，请重试")
           : words("操作已提交，正在重新读取状态。") + (result.requiresRestart ? words("账号切换需要重启工作进程后生效。") : "");
       } catch (error) {
@@ -292,6 +323,7 @@
       } finally {
         clearTimeout(timeout);
         busy = false;
+        writingEndpoint = "";
         paintMessages();
         lock();
         if (succeeded || instanceChanged) await refresh();
@@ -313,20 +345,25 @@
       root.innerHTML = `<div class="nikou-head"><div><h2></h2><p data-connection></p></div><div class="nikou-tools" data-tools></div></div>
         <div class="nikou-error" role="alert" hidden></div><p class="nikou-note" data-notice role="status"></p>
         <section class="list nikou-card"><h3 data-heading="status"></h3><dl class="nikou-state"></dl><div class="nikou-tools" data-worker></div></section>
+        <section class="list nikou-card nikou-gateway" data-gateway hidden><h3 data-heading="gateway"></h3><p data-gateway-state role="status"></p><p class="nikou-note" data-gateway-count></p><p class="nikou-note" data-gateway-note></p><div class="nikou-tools" data-gateway-tools></div></section>
         <section class="list nikou-card"><h3 data-heading="runtime"></h3><div class="nikou-fields"><div class="nikou-field"><span data-engine-label></span><div data-engine></div></div></div><p class="nikou-note" data-catalog-note></p><div data-scopes></div></section>
         <section class="list nikou-card"><h3 data-heading="accounts"></h3><div data-accounts></div></section>`;
       // 页面沿用纵向 flex 滚动容器；卡片必须保持内容高度，避免按钮与相邻内容重叠。
       for (const child of root.children) child.style.flexShrink = "0";
       $("h2").textContent = words("Nikou 管理");
       for (const [key, title] of [["status", "运行状态"], ["runtime", "会话模型与思考档位"], ["accounts", "账号管理"]]) $(`[data-heading="${key}"]`).textContent = words(title);
+      $("[data-heading='gateway']").textContent = words("Magpie 网关连接");
+      $("[data-gateway-note]").textContent = words("仅登记连接和模型目录，不影响当前工作进程；模型执行与工具权限仍待验证。");
       $("[data-engine-label]").textContent = words("目标引擎");
       const action = (parent, key, label, handler) => {
         const button = ui.button(words(label), handler);
         button.dataset.action = key;
         $(parent).append(button);
+        return button;
       };
       action("[data-tools]", "check", "检查连接", refresh);
       action("[data-tools]", "open", "打开完整控制台", () => write("open", {}));
+      action("[data-gateway-tools]", "gateway-connect", "登记网关连接", () => write("gateway/connect", {})).classList.add("primary");
       for (const [key, title] of [["worker", "工作进程"], ["connection", "连接状态"], ["engine", "实际引擎"], ["model", "实际模型"], ["effort", "实际思考档位"], ["supervisor", "管理方"]]) {
         const pair = ui.el("div");
         const value = text("dd", "", "尚未读取");

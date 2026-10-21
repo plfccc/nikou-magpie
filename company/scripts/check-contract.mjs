@@ -31,8 +31,12 @@ export async function checkContract({ root, nikouDir }) {
     const result = await runProcess({ file: probe, args: [`http://127.0.0.1:${port}`, path.join(isolated.env.USERPROFILE, '.nikou-block/console/token')], cwd: root, env, timeoutMs: 20_000 });
     if (result.exitCode !== 0) throw Error('Go 与 Nikou 实际协议联调失败');
     const replies = result.stdout.trim().split(/\r?\n/).map(line => JSON.parse(line));
-    if (replies.length !== 2 || replies.some(r => r.protocol !== 1 || !r.ok || !r.requestId) || replies[0].data.service !== 'nikou-console' || !replies[0].data.instanceId || !replies[1].data.status || !replies[1].data.scopes) throw Error('双端实际信封或状态字段不匹配');
-    return { ok: true, protocol: 1, checks: ['共享夹具字节一致', 'Go实际hello', 'Go实际status', '隔离控制台未启动Worker'] };
+    if (replies.length !== 6 || replies.some(r => r.protocol !== 1 || !r.ok || !r.requestId) || replies[0].data.service !== 'nikou-console' || !replies[0].data.instanceId || !replies[1].data.status || !replies[1].data.scopes) throw Error('双端实际信封或状态字段不匹配');
+    if (!replies[0].data.capabilities?.gatewayConnection || JSON.stringify(replies[2]) !== JSON.stringify(replies[3])) throw Error('受管连接能力或幂等回执不一致');
+    const catalog = replies[4].data;
+    if (!catalog.configured || catalog.verified !== false || catalog.workerIntegrated !== false || catalog.models?.[0]?.modelRef !== 'fixture/model' || JSON.stringify(catalog).includes('agentToken')) throw Error('受管目录字段、验证状态或凭据边界不匹配');
+    if ([replies[1], replies[5]].some(reply => reply.data.status?.workerStatus !== 'stopped' || reply.data.status?.pid !== null)) throw Error('登记网关不应启动 Worker');
+    return { ok: true, protocol: 1, checks: ['共享夹具字节一致', 'Go实际hello', 'Go实际status', 'Go实际登记网关', '重复登记回执一致', '目录未验证且无凭据', '隔离控制台未启动Worker'] };
   } finally {
     if (child && child.exitCode === null) await new Promise(resolve => { child.once('exit', resolve); child.kill(); });
     await rm(temporary, { recursive: true, force: true });
