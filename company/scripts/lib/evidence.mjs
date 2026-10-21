@@ -57,7 +57,9 @@ export async function sourceContext(options, { allowDirty = false, exact = true 
   return { ...ctx, package: pkg, provenance: { root: ctx.root, nikouDir: ctx.nikouDir, magpieUpstreamCommit: ctx.lock.magpie.commit, magpieCompanyCommit: sha, nikouUpstreamCommit: ctx.lock.nikou.commit, nikouEffectiveCommit: nikouSha, lockSha256: digest(ctx.lockBytes), dirty: isDirty, workingTrees: status } };
 }
 export async function sandbox(base) {
-  await mkdir(base, { recursive: true }); const dir = await mkdtemp(path.join(base, 'sandbox-'));
+  // Windows 的深层候选目录会触发 ENAMETOOLONG；允许维护脚本把临时隔离目录放到短路径。
+  const sandboxRoot = process.env.NIKOU_SANDBOX_ROOT || base;
+  await mkdir(sandboxRoot, { recursive: true }); const dir = await mkdtemp(path.join(sandboxRoot, 'sandbox-'));
   for (const name of ['home', 'appdata', 'localappdata', 'tmp']) await mkdir(path.join(dir, name));
   const gitConfig = path.join(dir, 'gitconfig'); await writeFile(gitConfig, '');
   const env = { ...process.env, HOME: path.join(dir, 'home'), USERPROFILE: path.join(dir, 'home'), APPDATA: path.join(dir, 'appdata'), LOCALAPPDATA: path.join(dir, 'localappdata'), TMP: path.join(dir, 'tmp'), TEMP: path.join(dir, 'tmp'), GIT_CONFIG_GLOBAL: gitConfig, GIT_CONFIG_NOSYSTEM: '1', GIT_TERMINAL_PROMPT: '0' };
