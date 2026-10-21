@@ -3,7 +3,7 @@
   "bridgeProtocol": 1,
   "magpie": {
     "repository": "https://github.com/yetone/magpie.git",
-    "commit": "2374ffe161439b02a8e7f23b793461b39a635bf8"
+    "commit": "5c557c793cc888c1227989b7bce654f239dd8fce"
   },
   "nikou": {
     "mode": "source",
