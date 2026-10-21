@@ -91,7 +91,8 @@ export async function command(ctx, checks, label, spec, env, required = true) {
 }
 export function npm(ctx, args, cwd) {
   const npmCli = ctx.npmCli ?? path.join(path.dirname(process.execPath), 'node_modules', 'npm', 'bin', 'npm-cli.js');
-  return npmCommand({ nodeExecutable: process.execPath, npmCli, args, cwd, timeoutMs: 600_000 });
+  // Windows 冷缓存安装 Nikou 原生依赖可能超过 10 分钟；保留超时保护并给足首次安装窗口。
+  return npmCommand({ nodeExecutable: process.execPath, npmCli, args, cwd, timeoutMs: 1_200_000 });
 }
 export async function filesUnder(root) {
   const files = [];
