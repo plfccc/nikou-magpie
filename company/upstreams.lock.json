@@ -3,19 +3,19 @@
   "bridgeProtocol": 1,
   "magpie": {
     "repository": "https://github.com/yetone/magpie.git",
-    "commit": "efd1b697e401ca9ea771a02720291a0e53ac414b"
+    "commit": "7dd965ed22e6619c9084f3bca58e444073e8a41c"
   },
   "nikou": {
     "mode": "source",
     "package": "nikou-cli",
-    "version": "0.1.90",
+    "version": "0.1.97",
     "repository": "http://gitlab.inzwc.com/nikou/nikou-cli.git",
-    "commit": "0f406019b7139d165f3686350a0a1b16c6380bdf",
-    "effectiveCommit": "b5455f2dcacf63c2489f48d18f1b0672fd38712d",
+    "commit": "77a89bd5f6eeb5ca39ce828f2dca309e62073130",
+    "effectiveCommit": "f5142d294864f60e38e5ea6cc8b6c7ae0a785021",
     "sourceVerified": true,
     "dependencyLock": {
       "path": "package-lock.json",
-      "sha256": "441a038e359cf21856add63420fdf94bbb137a8a0f3d34addc800f6234f927a2"
+      "sha256": "553ea8bda2d90d9a59642a767aadf9391395319c181eaa449c94fde30275526e"
     }
   }
 }

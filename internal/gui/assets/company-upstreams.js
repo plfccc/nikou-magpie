@@ -34,10 +34,10 @@ function renderCompanyUpstreams(row, result) {
       const progress = maintenance.progress;
       if (progress?.stage) block.append(el("p", "cu-hint", `当前步骤：${progress.stage}（${progress.status === "fail" ? "失败，等待处理" : progress.status === "pass" ? "已通过" : "执行中"}）；已完成 ${progress.completedChecks || 0} 项检查`));
       const heartbeat = maintenance.heartbeat?.updatedAt;
-      if (heartbeat) block.append(el("div", "cu-time", `执行器心跳：${new Date(heartbeat).toLocaleTimeString()}；单轮最长 45 分钟`));
+      if (heartbeat) block.append(el("div", "cu-time", `执行器心跳：${new Date(heartbeat).toLocaleTimeString(intlLang())}；单轮最长 45 分钟`));
     }
     const date = maintenance.completedAt || maintenance.startedAt;
-    if (date) block.append(el("div", "cu-time", `最近执行：${new Date(date).toLocaleString()}`));
+    if (date) block.append(el("div", "cu-time", `最近执行：${new Date(date).toLocaleString(intlLang())}`));
     if (maintenance.notification) block.append(el("div", "cu-time", maintenance.notification.status === "sent" ? "飞书通知已发送" : "飞书通知未送达，请检查通知配置"));
     sub.append(block);
   }
@@ -46,7 +46,7 @@ function renderCompanyUpstreams(row, result) {
   const check = el("button", "text", status.checking ? "正在检查…" : "立即检查");
   check.type = "button";
   check.disabled = status.checking;
-  const checked = el("span", "cu-time", status.checkedAt ? `最近检查：${new Date(status.checkedAt).toLocaleString()}` : "尚未检查");
+  const checked = el("span", "cu-time", status.checkedAt ? `最近检查：${new Date(status.checkedAt).toLocaleString(intlLang())}` : "尚未检查");
   controls.append(check, checked);
   const automatic = el("label", "cu-auto");
   const toggle = el("input");
